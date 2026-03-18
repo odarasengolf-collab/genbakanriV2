@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>現場管理</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f1117;--bg2:#1a1d26;--bg3:#22263a;--border:#2a2f3f;--border2:#363d52;--text:#e8eaf2;--text2:#8b95b0;--text3:#5a6380;--blue:#5b9cf6;--blue3:#0d2040;--green:#34d399;--green2:#0d3d2a;--red:#f87171;--red2:#3d1515;--yellow:#fbbf24;--yellow2:#3d2d0d;--purple:#a78bfa;--purple2:#2a1d4a;--nav-h:64px;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;font-size:16px;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto}
+.hdr{height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-title{font-size:17px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--text3)}
+.hdr-btn{padding:8px 14px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;padding-bottom:calc(var(--nav-h)+16px)}
+.page{display:none}.page.active{display:block}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-around;padding-top:8px;z-index:50;padding-bottom:env(safe-area-inset-bottom,0)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;padding:2px 8px;min-width:50px;position:relative}
+.tab .ic{font-size:22px;line-height:1}
+.tab .lb{font-size:10px;color:var(--text3);font-weight:600}
+.tab.active .lb{color:var(--blue)}
+.tab .bdg{position:absolute;top:0;right:6px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2)}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:13px 8px;text-align:center}
+.sc .n{font-size:28px;font-weight:700;line-height:1.1}
+.sc .l{font-size:11px;color:var(--text3);margin-top:4px}
+.sc.danger{border-color:var(--red);background:var(--red2)}.sc.danger .n{color:var(--red)}
+.sc.warn{border-color:var(--yellow);background:var(--yellow2)}.sc.warn .n{color:var(--yellow)}
+.sc.ok{border-color:var(--green);background:var(--green2)}.sc.ok .n{color:var(--green)}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:18px 0 9px}
+.sec h3{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.sec .cnt{background:var(--bg3);color:var(--text3);font-size:12px;padding:2px 8px;border-radius:8px;font-weight:600}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:10px;cursor:pointer;transition:transform .1s}
+.card:active{transform:scale(0.98)}
+.card.alert{border-color:var(--red);background:var(--red2)}
+.card.warn{border-color:var(--yellow);background:var(--yellow2)}
+.card.ok{border-color:var(--green);background:var(--green2)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:8px;line-height:1.4}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.card-note{font-size:13px;color:var(--yellow);margin-top:8px;line-height:1.5}
+/* 注意点・特記事項を目立たせる */
+.note-box{background:var(--yellow2);border:1.5px solid var(--yellow);border-radius:10px;padding:10px 13px;margin-top:10px;display:flex;gap:8px;align-items:flex-start}
+.note-box .note-ic{font-size:16px;flex-shrink:0;margin-top:1px}
+.note-box .note-text{font-size:13px;color:var(--yellow);font-weight:700;line-height:1.6;flex:1}
+/* 工事日近い×未入荷 緊急バナー */
+.urgent-banner{background:var(--red2);border:2px solid var(--red);border-radius:14px;padding:14px 15px;margin-bottom:14px}
+.urgent-banner .ub-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.urgent-item{background:rgba(248,113,113,.12);border-radius:10px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:transform .1s}
+.urgent-item:active{transform:scale(0.98)}
+.urgent-item:last-child{margin-bottom:0}
+.urgent-item .u-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:5px;line-height:1.3}
+.urgent-item .u-meta{font-size:12px;color:rgba(248,113,113,.8);display:flex;gap:7px;flex-wrap:wrap}
+.card-actions{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.bdg2{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700}
+.b-red{background:var(--red2);color:var(--red);border:1px solid var(--red)}
+.b-green{background:var(--green2);color:var(--green);border:1px solid var(--green)}
+.b-yellow{background:var(--yellow2);color:var(--yellow);border:1px solid var(--yellow)}
+.b-blue{background:var(--blue3);color:var(--blue);border:1px solid var(--blue)}
+.b-purple{background:var(--purple2);color:var(--purple);border:1px solid var(--purple)}
+.b-gray{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.btn{padding:13px 18px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:48px;transition:transform .1s}
+.btn:active{transform:scale(0.96)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#0a2a1e}
+.btn-out{background:transparent;border:1.5px solid var(--border2);color:var(--text2)}
+.btn-full{width:100%}
+.btn-sm{padding:9px 14px;font-size:13px;min-height:42px}
+.btn-row{display:flex;gap:8px;margin-top:11px}
+.btn-row .btn{flex:1}
+.w-col{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px}
+.w-hd{padding:13px 15px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border)}
+.w-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.w-name{font-size:16px;font-weight:700;flex:1}
+.w-cnt{font-size:12px;color:var(--text3);background:var(--bg3);padding:3px 9px;border-radius:9px;font-weight:600}
+.w-cards{padding:9px 11px;display:flex;flex-direction:column;gap:7px}
+.wcard{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:11px;cursor:pointer;transition:transform .1s}
+.wcard:active{transform:scale(0.97)}
+.wcard-t{font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.3}
+.wcard-m{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.detail{background:var(--bg2);border:1.5px solid var(--border2);border-radius:16px;padding:15px;margin-top:12px;display:none}
+.detail.show{display:block}
+.dt-hd{display:flex;align-items:start;gap:10px;margin-bottom:13px}
+.dt-title{font-size:16px;font-weight:700;flex:1;line-height:1.4}
+.dt-close{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dt-row{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px}
+.dt-row:last-child{border-bottom:none}
+.dt-lbl{color:var(--text3);min-width:62px;flex-shrink:0;font-size:12px;padding-top:2px}
+.dt-val{font-weight:500;flex:1;line-height:1.5}
+.st-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.sbtn{padding:10px 13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);transition:transform .1s;min-height:42px}
+.sbtn:active{transform:scale(0.93)}
+.sbtn.cur{border-color:var(--blue);background:var(--blue3);color:var(--blue)}
+.sbtn.g{border-color:var(--green);background:var(--green2);color:var(--green)}
+.sbtn.r{border-color:var(--red);background:var(--red2);color:var(--red)}
+.sbtn.y{border-color:var(--yellow);background:var(--yellow2);color:var(--yellow)}
+.dtabs{display:flex;gap:7px;margin-bottom:13px;overflow-x:auto;padding-bottom:2px;-ms-overflow-style:none;scrollbar-width:none}
+.dtabs::-webkit-scrollbar{display:none}
+.dtab{padding:9px 18px;border-radius:22px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text2);white-space:nowrap;min-height:40px;transition:all .15s}
+.dtab.active{background:var(--blue3);color:var(--blue);border-color:var(--blue)}
+.ptabs{display:flex;gap:7px;margin-bottom:13px;overflow-x:auto;padding-bottom:3px;-ms-overflow-style:none;scrollbar-width:none}
+.ptabs::-webkit-scrollbar{display:none}
+.ptab{padding:9px 16px;border-radius:22px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text3);white-space:nowrap;min-height:40px}
+.ptab.before.active{background:#3d2800;color:var(--yellow);border-color:var(--yellow)}
+.ptab.during.active{background:var(--blue3);color:var(--blue);border-color:var(--blue)}
+.ptab.after.active{background:var(--green2);color:var(--green);border-color:var(--green)}
+.ptab.other.active{background:var(--purple2);color:var(--purple);border-color:var(--purple)}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.pcell{border-radius:10px;overflow:hidden;aspect-ratio:1;background:var(--bg3);border:1px solid var(--border);position:relative}
+.pcell img{width:100%;height:100%;object-fit:cover;display:block}
+.pbadge{position:absolute;top:5px;left:5px;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700}
+.padd{border:2px dashed var(--border2);border-radius:10px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);gap:4px}
+.voice-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px}
+.mic-btn{width:88px;height:88px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:36px;transition:all .2s;margin-bottom:14px}
+.mic-btn.idle{background:linear-gradient(135deg,var(--blue),var(--purple));box-shadow:0 6px 20px rgba(91,156,246,.3)}
+.mic-btn.rec{background:linear-gradient(135deg,var(--red),#ff9500);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.mic-st{font-size:14px;color:var(--text2);margin-bottom:18px;text-align:center}
+.transcript{background:var(--bg2);border:1.5px solid var(--border2);border-radius:13px;padding:13px;margin-bottom:13px;font-size:15px;min-height:80px;line-height:1.7;color:var(--text);outline:none;width:100%;resize:none;font-family:inherit}
+.transcript:focus{border-color:var(--blue)}
+.qbtns{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+.qbtn{padding:9px 14px;border-radius:22px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text2);min-height:42px;transition:transform .1s}
+.qbtn:active{transform:scale(0.93)}
+.f-lbl{font-size:13px;color:var(--text3);margin-bottom:6px;display:block;font-weight:600}
+.f-sel{width:100%;padding:13px 15px;border:1.5px solid var(--border2);border-radius:12px;font-size:16px;background:var(--bg2);color:var(--text);outline:none;margin-bottom:13px;-webkit-appearance:none;font-family:inherit;cursor:pointer}
+.f-sel:focus{border-color:var(--blue)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.cal-nbtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cal-nbtn:active{transform:scale(0.9)}
+.cal-title{font-size:17px;font-weight:700}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.chd{text-align:center;font-size:10px;color:var(--text3);padding:4px 0;font-weight:700;margin-bottom:3px}
+.ccell{min-height:50px;border:1px solid var(--border);border-radius:7px;padding:3px 2px;background:var(--bg2);overflow:hidden}
+.ccell.today{border-color:var(--blue);background:var(--blue3)}
+.ccell.dim{opacity:.25}
+.cnum{font-size:10px;font-weight:700;text-align:center;color:var(--text2);margin-bottom:2px}
+.ccell.today .cnum{color:var(--blue)}
+.cev{font-size:9px;padding:1px 2px;border-radius:2px;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.cev.ew{background:var(--green2);color:var(--green)}
+.cev.ea{background:var(--blue3);color:var(--blue)}
+.spin{width:18px;height:18px;border:2.5px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;flex-direction:column;align-items:center;gap:13px;font-size:14px;color:var(--text2);padding:40px 0}
+.toast{position:fixed;bottom:calc(var(--nav-h)+13px);left:50%;transform:translateX(-50%) translateY(14px);background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:12px 20px;font-size:14px;z-index:200;opacity:0;transition:all .22s;pointer-events:none;max-width:88vw;text-align:center;color:var(--text);font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.6)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.sep{height:1px;background:var(--border);margin:14px 0}
+.refresh-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.refresh-btn:active{background:var(--bg3)}
+/* 現場記録 */
+.rec-tabs{display:flex;gap:7px;margin-bottom:14px}
+.rec-tab{flex:1;padding:10px 8px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg2);color:var(--text3);text-align:center;transition:all .15s}
+.rec-tab.active{background:var(--purple2);color:var(--purple);border-color:var(--purple)}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tag{padding:7px 13px;border-radius:22px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--bg2);color:var(--text3);transition:all .15s;min-height:38px}
+.tag.sel{border-width:2px}
+.tag.ガラス.sel{background:#0d2040;color:#5b9cf6;border-color:#5b9cf6}
+.tag.ビート.sel{background:#3d2d0d;color:#fbbf24;border-color:#fbbf24}
+.tag.クレセント.sel{background:#0d3d2a;color:#34d399;border-color:#34d399}
+.tag.戸車.sel{background:#2a1d4a;color:#a78bfa;border-color:#a78bfa}
+.tag.網戸.sel{background:#3d1515;color:#f87171;border-color:#f87171}
+.tag.その他.sel{background:var(--bg3);color:var(--text2);border-color:var(--border2)}
+.f-input{width:100%;padding:13px 15px;border:1.5px solid var(--border2);border-radius:12px;font-size:16px;background:var(--bg2);color:var(--text);outline:none;margin-bottom:11px;font-family:inherit}
+.f-input:focus{border-color:var(--blue)}
+.dim-row{display:grid;grid-template-columns:1fr 16px 1fr 60px;gap:6px;align-items:center;margin-bottom:11px}
+.dim-sep{text-align:center;color:var(--text3);font-size:16px;font-weight:700}
+.dim-unit{padding:13px 10px;border:1.5px solid var(--border2);border-radius:12px;font-size:15px;background:var(--bg2);color:var(--text);outline:none;-webkit-appearance:none;font-family:inherit;cursor:pointer;text-align:center}
+.rec-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:9px}
+.rec-card-title{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.rec-card-body{font-size:13px;color:var(--text2);line-height:1.8}
+.rec-card-meta{font-size:12px;color:var(--text3);margin-top:7px;display:flex;gap:7px;flex-wrap:wrap}
+.tag-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700}
+.tag-badge.ガラス{background:#0d2040;color:#5b9cf6;border:1px solid #5b9cf6}
+.tag-badge.ビート{background:#3d2d0d;color:#fbbf24;border:1px solid #fbbf24}
+.tag-badge.クレセント{background:#0d3d2a;color:#34d399;border:1px solid #34d399}
+.tag-badge.戸車{background:#2a1d4a;color:#a78bfa;border:1px solid #a78bfa}
+.tag-badge.網戸{background:#3d1515;color:#f87171;border:1px solid #f87171}
+.tag-badge.その他{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.search-input{width:100%;padding:13px 15px 13px 40px;border:1.5px solid var(--border2);border-radius:12px;font-size:16px;background:var(--bg2);color:var(--text);outline:none;font-family:inherit;margin-bottom:12px}
+.search-input:focus{border-color:var(--blue)}
+.search-wrap{position:relative}
+.search-wrap::before{content:"🔍";position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;margin-bottom:12px}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr">
+  <div>
+    <div class="hdr-title" id="page-title">🏠 朝の確認</div>
+    <div class="hdr-sub" id="today-lbl"></div>
+  </div>
+  <div id="hdr-act"></div>
+</div>
+<div class="content">
+
+<!-- 朝の確認 -->
+<div class="page active" id="page-dash">
+  <div id="loading-dash" class="loading"><div class="spin"></div><div>Notionから読み込み中...</div></div>
+  <div id="dash-body" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text3)" id="last-updated"></div>
+      <button class="refresh-btn" onclick="loadFromNotion(true)"><span>🔄</span><span>更新</span></button>
+    </div>
+    <!-- 🔔 緊急アラートバナー（工事日近い×未入荷） -->
+    <div id="urgent-banner-wrap"></div>
+    <div class="sum-grid" id="dash-sum"></div>
+    <div class="sec"><h3>⚠️ 要対応</h3><span class="cnt" id="d-ac"></span></div>
+    <div id="d-alerts"></div>
+    <div class="sec"><h3>📋 本日の作業</h3><span class="cnt" id="d-tc"></span></div>
+    <div id="d-today"></div>
+    <div class="sec"><h3>📦 入荷予定（今日〜明日）</h3><span class="cnt" id="d-arc"></span></div>
+    <div id="d-arrive"></div>
+    <div class="sec"><h3>📅 今後の予定</h3><span class="cnt" id="d-fc"></span></div>
+    <div id="d-future"></div>
+  </div>
+</div>
+
+<!-- 担当者ボード -->
+<div class="page" id="page-board">
+  <div class="dtabs" id="dtabs"></div>
+  <div id="board-loading" class="loading" style="display:none"><div class="spin"></div><div>読み込み中...</div></div>
+  <div id="board"></div>
+  <div class="detail" id="job-detail">
+    <div class="dt-hd">
+      <div class="dt-title" id="jd-title"></div>
+      <button class="dt-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="jd-rows"></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:12px;margin-bottom:5px;font-weight:600">工程を変更：</div>
+    <div class="st-grid" id="jd-status"></div>
+    <div id="jd-actions" style="margin-top:13px;display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- 現場写真 -->
+<div class="page" id="page-photo">
+  <label class="f-lbl">案件を選択</label>
+  <select class="f-sel" id="photo-job" onchange="onPhotoJob()"><option value="">選択してください...</option></select>
+  <div id="photo-info" style="display:none;font-size:13px;color:var(--text2);padding:11px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:13px;line-height:1.6"></div>
+
+  <!-- 写真 / 現場記録 切替タブ -->
+  <div class="rec-tabs" id="photo-rec-tabs">
+    <button class="rec-tab active" onclick="switchPhotoMode('photo')">📷 現場写真</button>
+    <button class="rec-tab" onclick="switchPhotoMode('record')">📐 現場記録</button>
+  </div>
+
+  <!-- 写真モード -->
+  <div id="mode-photo">
+    <div class="ptabs" id="ptabs">
+      <button class="ptab before active" onclick="setPhase('before')">📷 施工前</button>
+      <button class="ptab during" onclick="setPhase('during')">🔨 施工中</button>
+      <button class="ptab after" onclick="setPhase('after')">✅ 完了</button>
+      <button class="ptab other" onclick="setPhase('other')">📌 その他</button>
+    </div>
+    <div id="photo-content"></div>
+    <input type="file" id="photo-file" accept="image/*" multiple style="display:none" onchange="handlePhotoFiles(this.files)">
+    <div id="report-wrap" style="display:none;margin-top:13px">
+      <div class="sep"></div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:13px">📄 報告書プレビュー</div>
+      <div id="report-content"></div>
+      <div class="btn-row" style="margin-top:13px">
+        <button class="btn btn-out btn-sm" onclick="window.print()">🖨️ PDF出力</button>
+        <button class="btn btn-blue btn-sm" onclick="sendPhotoNotion()">📤 Notion送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 現場記録モード -->
+  <div id="mode-record" style="display:none">
+    <div id="rec-form-wrap">
+      <!-- 種別タグ選択 -->
+      <div class="f-lbl">種別タグ（複数選択可）</div>
+      <div class="tag-row" id="rec-tags">
+        <button class="tag ガラス" onclick="toggleTag(this,'ガラス')">🪟 ガラス</button>
+        <button class="tag ビート" onclick="toggleTag(this,'ビート')">🟡 ビート</button>
+        <button class="tag クレセント" onclick="toggleTag(this,'クレセント')">🔒 クレセント</button>
+        <button class="tag 戸車" onclick="toggleTag(this,'戸車')">⚙️ 戸車</button>
+        <button class="tag 網戸" onclick="toggleTag(this,'網戸')">🕸️ 網戸</button>
+        <button class="tag その他" onclick="toggleTag(this,'その他')">📦 その他</button>
+      </div>
+
+      <!-- 箇所名 -->
+      <div class="f-lbl">箇所名</div>
+      <input type="text" class="f-input" id="rec-location" placeholder="例：リビング窓、浴室ドア、玄関..." autocomplete="off">
+
+      <!-- 寸法（ガラス・網戸選択時に強調） -->
+      <div class="f-lbl" id="rec-dim-lbl">寸法</div>
+      <div class="dim-row">
+        <input type="number" class="f-input" id="rec-w" placeholder="幅" style="margin:0" autocomplete="off">
+        <div class="dim-sep">×</div>
+        <input type="number" class="f-input" id="rec-h" placeholder="高さ" style="margin:0" autocomplete="off">
+        <select class="dim-unit" id="rec-unit">
+          <option>mm</option>
+          <option>cm</option>
+        </select>
+      </div>
+
+      <!-- 種類・型番 -->
+      <div class="f-lbl">種類・型番・品番</div>
+      <input type="text" class="f-input" id="rec-type" placeholder="例：透明・型板・DGK-6413・YKKクレセント..." autocomplete="off">
+
+      <!-- 数量 -->
+      <div class="f-lbl">数量</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:11px">
+        <button style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:22px;cursor:pointer;font-weight:700;flex-shrink:0" onclick="recQty(-1)">−</button>
+        <span id="rec-qty-val" style="font-size:20px;font-weight:700;min-width:32px;text-align:center">1</span>
+        <button style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:22px;cursor:pointer;font-weight:700;flex-shrink:0" onclick="recQty(1)">＋</button>
+        <input type="text" class="f-input" id="rec-qty-unit" placeholder="単位（枚・個・本・m）" style="flex:1;margin:0" autocomplete="off">
+      </div>
+
+      <!-- メモ -->
+      <div class="f-lbl">メモ・備考</div>
+      <textarea class="f-input" id="rec-memo" placeholder="気づいたことや注意点など..." style="min-height:70px;resize:none;line-height:1.6"></textarea>
+
+      <!-- 保存ボタン -->
+      <button class="btn btn-green btn-full" onclick="saveRecord()">📐 記録を保存する</button>
+      <div style="margin-top:8px;font-size:12px;color:var(--text3);text-align:center">保存するとNotionのページにも記録されます</div>
+    </div>
+
+    <!-- 保存済み記録一覧 -->
+    <div id="rec-list-wrap" style="margin-top:20px">
+      <div class="sec"><h3>📋 この案件の記録</h3><span class="cnt" id="rec-cnt"></span></div>
+      <div id="rec-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 音声報告 -->
+<div class="page" id="page-voice">
+  <label class="f-lbl">案件を選択</label>
+  <select class="f-sel" id="voice-job"><option value="">選択してください...</option></select>
+  <div class="voice-wrap">
+    <button class="mic-btn idle" id="mic-btn" onclick="toggleRec()">🎙️</button>
+    <div class="mic-st" id="mic-st">タップして録音開始</div>
+  </div>
+  <div class="qbtns">
+    <button class="qbtn" onclick="insQ('施工完了しました')">✅ 完了</button>
+    <button class="qbtn" onclick="insQ('追加作業が必要です')">🔧 追加作業</button>
+    <button class="qbtn" onclick="insQ('材料が不足しています')">📦 材料不足</button>
+    <button class="qbtn" onclick="insQ('お客様確認済みです')">👤 顧客確認</button>
+    <button class="qbtn" onclick="insQ('シリコン追加必要')">⚠️ シリコン</button>
+    <button class="qbtn" onclick="insQ('クレームあり・要対応')">🚨 クレーム</button>
+  </div>
+  <textarea class="transcript" id="v-text" placeholder="ここに内容が表示されます。直接入力もできます..."></textarea>
+  <label class="f-lbl">工程を更新する（任意）</label>
+  <select class="f-sel" id="v-status">
+    <option value="">変更しない</option>
+    <option>工事中</option><option>完了</option><option>確認中</option>
+    <option>入荷済み</option><option>組み立て済み</option>
+  </select>
+  <button class="btn btn-blue btn-full" onclick="sendVoice()">📤 Notionに送信</button>
+</div>
+
+<!-- 記録検索 -->
+<div class="page" id="page-search">
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="search-q" placeholder="案件名・種別・箇所・型番で検索..." oninput="renderSearch()">
+  </div>
+  <!-- タグフィルター -->
+  <div class="tag-row" style="margin-bottom:14px" id="search-tags">
+    <button class="tag ガラス" onclick="toggleSearchTag(this,'ガラス')">🪟 ガラス</button>
+    <button class="tag ビート" onclick="toggleSearchTag(this,'ビート')">🟡 ビート</button>
+    <button class="tag クレセント" onclick="toggleSearchTag(this,'クレセント')">🔒 クレセント</button>
+    <button class="tag 戸車" onclick="toggleSearchTag(this,'戸車')">⚙️ 戸車</button>
+    <button class="tag 網戸" onclick="toggleSearchTag(this,'網戸')">🕸️ 網戸</button>
+    <button class="tag その他" onclick="toggleSearchTag(this,'その他')">📦 その他</button>
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<!-- カレンダー -->
+<div class="page" id="page-cal">
+  <div class="cal-nav">
+    <button class="cal-nbtn" onclick="calPrev()">←</button>
+    <div class="cal-title" id="cal-title"></div>
+    <button class="cal-nbtn" onclick="calNext()">→</button>
+  </div>
+  <!-- 凡例 -->
+  <div style="display:flex;gap:9px;font-size:11px;color:var(--text3);margin-bottom:9px;flex-wrap:wrap">
+    <span><span style="width:8px;height:8px;background:var(--green);border-radius:2px;display:inline-block;margin-right:3px"></span>作業</span>
+    <span><span style="width:8px;height:8px;background:var(--blue);border-radius:2px;display:inline-block;margin-right:3px"></span>入荷</span>
+    <span><span style="width:8px;height:8px;background:#a78bfa;border-radius:2px;display:inline-block;margin-right:3px"></span>引き取り</span>
+  </div>
+  <div class="cgrid" id="cal-hds"></div>
+  <div class="cgrid" id="cal-body"></div>
+  <!-- 日付タップ時の案件リスト -->
+  <div id="cal-day-detail" style="display:none;margin-top:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+      <div style="font-size:14px;font-weight:700" id="cal-day-title"></div>
+      <button onclick="document.getElementById('cal-day-detail').style.display='none'" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div id="cal-day-list"></div>
+  </div>
+</div>
+
+<!-- 引き取り管理 -->
+<div class="page" id="page-hikitori">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:13px;color:var(--text3)" id="hk-updated"></div>
+    <button class="refresh-btn" onclick="loadHikitori(true)"><span>🔄</span><span>更新</span></button>
+  </div>
+  <!-- フィルタータブ -->
+  <div class="dtabs" id="hk-tabs">
+    <button class="dtab active" onclick="setHkFilter('pending',this)">⏳ 未引き取り</button>
+    <button class="dtab" onclick="setHkFilter('done',this)">✅ 完了済み</button>
+    <button class="dtab" onclick="setHkFilter('all',this)">全て</button>
+  </div>
+  <div id="hk-loading" class="loading" style="display:none"><div class="spin"></div><div>読み込み中...</div></div>
+  <div id="hk-list"></div>
+</div>
+
+<!-- 週間スケジュール -->
+<div class="page" id="page-week">
+  <div class="dtabs" id="week-nav" style="justify-content:center"></div>
+  <div id="week-body"></div>
+</div>
+
+<!-- 一括工程変更 -->
+<div class="page" id="page-bulk">
+  <div style="background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:13px 15px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.6">
+    📌 案件を選んで、まとめて工程を変更できます。<br>例：まとめて「入荷済み」に変更など。
+  </div>
+  <!-- 変更後の工程選択 -->
+  <label class="f-lbl">変更する工程を選択</label>
+  <div class="st-grid" id="bulk-status-btns" style="margin-bottom:16px"></div>
+  <!-- フィルター -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px">
+    <button class="dtab active" id="bk-f-all" onclick="setBulkFilter('all',this)">全案件</button>
+    <button class="dtab" id="bk-f-today" onclick="setBulkFilter('today',this)">今日</button>
+    <button class="dtab" id="bk-f-tomorrow" onclick="setBulkFilter('tomorrow',this)">明日</button>
+    <button class="dtab" id="bk-f-unarrive" onclick="setBulkFilter('unarrive',this)">未入荷</button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-size:13px;color:var(--text3)" id="bulk-sel-count">0件選択中</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-out btn-sm" onclick="bulkSelectAll()">全選択</button>
+      <button class="btn btn-out btn-sm" onclick="bulkClearAll()">解除</button>
+    </div>
+  </div>
+  <div id="bulk-list"></div>
+  <div style="position:sticky;bottom:calc(var(--nav-h)+8px);padding:12px 0 4px">
+    <button class="btn btn-green btn-full" id="bulk-exec-btn" onclick="execBulk()" style="box-shadow:0 4px 20px rgba(52,211,153,.3)">
+      ✅ まとめて変更する
+    </button>
+  </div>
+</div>
+
+<!-- 案件チャットメモ -->
+<div class="page" id="page-chat">
+  <label class="f-lbl">案件を選択</label>
+  <select class="f-sel" id="chat-job" onchange="onChatJob()"><option value="">選択してください...</option></select>
+  <div id="chat-job-info" style="display:none;font-size:13px;color:var(--text2);padding:11px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;line-height:1.6"></div>
+  <div id="chat-messages" style="display:none">
+    <div id="chat-list" style="margin-bottom:14px"></div>
+    <!-- 送信者選択 -->
+    <label class="f-lbl">送信者</label>
+    <select class="f-sel" id="chat-sender">
+      <option value="">選択...</option>
+      <option>若林</option><option>貴大</option><option>竜太</option><option>前田</option>
+      <option>塩田</option><option>部家</option><option>栗本</option><option>松田</option>
+      <option>為井</option><option>社長</option>
+    </select>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <textarea class="f-input" id="chat-input" placeholder="メモを入力..." style="flex:1;min-height:70px;resize:none;line-height:1.6;margin:0"></textarea>
+    </div>
+    <button class="btn btn-blue btn-full" onclick="sendChatMsg()" style="margin-top:10px">💬 Notionに送信</button>
+  </div>
+</div>
+
+<!-- アラート -->
+<div class="page" id="page-alert">
+  <div id="alert-chips" style="flex-wrap:wrap;display:flex;margin-bottom:14px"></div>
+  <div id="alert-list"></div>
+</div>
+
+<!-- 新規案件登録 -->
+<div class="page" id="page-new">
+  <div style="background:var(--blue3);border:1.5px solid var(--blue);border-radius:14px;padding:13px 15px;margin-bottom:16px;font-size:13px;color:var(--blue);line-height:1.6">📋 入力してNotionに直接登録します。登録後すぐ朝確認に反映されます。</div>
+
+  <label class="f-lbl">指示書タイトル <span style="color:var(--red)">*</span></label>
+  <input type="text" class="f-input" id="new-title" placeholder="例：橋本様邸　サッシ配達" autocomplete="off">
+
+  <label class="f-lbl">得意先</label>
+  <input type="text" class="f-input" id="new-client" placeholder="例：タイコーハウジングコア" list="client-list" autocomplete="off">
+  <datalist id="client-list"></datalist>
+
+  <label class="f-lbl">担当営業</label>
+  <select class="f-sel" id="new-sales" style="margin-bottom:13px">
+    <option value="">選択...</option>
+    <option>社長</option><option>櫛部</option><option>椀田</option>
+    <option>平林</option><option>中田</option><option>福本</option><option>貴大</option>
+  </select>
+
+  <label class="f-lbl">作業実施者（複数選択可）</label>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px" id="new-workers-btns">
+    <button class="tag" onclick="toggleWorkerBtn(this,'若林')">若林</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'貴大')">貴大</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'竜太')">竜太</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'前田')">前田</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'塩田')">塩田</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'部家')">部家</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'栗本')">栗本</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'松田')">松田</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'為井')">為井</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'社長')">社長</button>
+    <button class="tag" onclick="toggleWorkerBtn(this,'引き取り')">🚗 引き取り</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px">
+    <div>
+      <label class="f-lbl">作業日</label>
+      <input type="date" class="f-input" id="new-workdate" style="margin:0">
+    </div>
+    <div>
+      <label class="f-lbl">入荷予定日</label>
+      <input type="date" class="f-input" id="new-arrivedate" style="margin:0">
+    </div>
+  </div>
+
+  <label class="f-lbl">現場住所（簡易）</label>
+  <input type="text" class="f-input" id="new-address" placeholder="例：東大阪市、尼崎市西昆陽" autocomplete="off">
+
+  <label class="f-lbl">現場住所URL（GoogleマップURL）</label>
+  <input type="url" class="f-input" id="new-mapurl" placeholder="https://maps.app.goo.gl/..." autocomplete="off">
+
+  <label class="f-lbl">注意点・特記事項</label>
+  <textarea class="f-input" id="new-note" placeholder="例：シリコンホワイト指定、完了写真必須..." style="min-height:70px;resize:none;line-height:1.6"></textarea>
+
+  <label class="f-lbl">工程状況</label>
+  <select class="f-sel" id="new-status">
+    <option value="未着手">未着手</option>
+    <option value="未入荷">未入荷</option>
+    <option value="入荷済み">入荷済み</option>
+    <option value="工事日未定">工事日未定</option>
+    <option value="手配書まだ">手配書まだ</option>
+  </select>
+
+  <button class="btn btn-blue btn-full" id="new-submit-btn" onclick="submitNewJob()">📋 Notionに登録する</button>
+  <div style="height:12px"></div>
+</div>
+
+<!-- 担当者グラフ -->
+<div class="page" id="page-graph">
+  <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">
+    <button class="dtab active" id="gp-tab-month" onclick="setGraphTab('month',this)">今月</button>
+    <button class="dtab" id="gp-tab-week" onclick="setGraphTab('week',this)">今週</button>
+    <button class="dtab" id="gp-tab-all" onclick="setGraphTab('all',this)">全期間</button>
+  </div>
+  <div id="graph-wrap"></div>
+  <div class="sep"></div>
+  <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">📋 工程状況の内訳</div>
+  <div id="status-breakdown"></div>
+</div>
+
+</div>
+
+<!-- 次回メモ モーダル -->
+<div id="next-note-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;border-top:1px solid var(--border2)">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:600">次回メモ</div>
+    <div id="next-note-title" style="font-size:15px;font-weight:700;margin-bottom:14px;line-height:1.4;color:var(--text)"></div>
+    <textarea id="next-note-input" style="width:100%;padding:13px;border:1.5px solid var(--border2);border-radius:12px;font-size:16px;background:var(--bg3);color:var(--text);outline:none;resize:none;font-family:inherit;min-height:90px;line-height:1.6" placeholder="例：次回は○○が必要、△△を確認すること..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-out" style="flex:1" onclick="document.getElementById('next-note-modal').style.display='none'">キャンセル</button>
+      <button class="btn btn-green" style="flex:1" onclick="saveNextNote()">📝 保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="tab active" id="tab-dash" onclick="go('dash')"><span class="ic">🏠</span><span class="lb">朝確認</span></button>
+  <button class="tab" id="tab-board" onclick="go('board')"><span class="ic">👥</span><span class="lb">担当</span><span class="bdg" id="bdg-b"></span></button>
+  <button class="tab" id="tab-cal" onclick="go('cal')"><span class="ic">📅</span><span class="lb">予定</span></button>
+  <button class="tab" id="tab-hikitori" onclick="go('hikitori')"><span class="ic">🚗</span><span class="lb">引き取り</span><span class="bdg" id="bdg-hk"></span></button>
+  <button class="tab" id="tab-new" onclick="go('new')"><span class="ic">➕</span><span class="lb">新規登録</span></button>
+  <button class="tab" id="tab-more2" onclick="toggleMore2()"><span class="ic">⋯</span><span class="lb">その他</span></button>
+</div>
+
+<!-- その他メニュー（ポップアップ） -->
+<div id="more2-menu" style="display:none;position:fixed;bottom:calc(var(--nav-h)+8px);left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:456px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:12px;z-index:60;box-shadow:0 -8px 32px rgba(0,0,0,.5)">
+  <div style="font-size:12px;color:var(--text3);font-weight:700;margin-bottom:10px;text-align:center">その他の機能</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <button onclick="go('week');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">🗓️</span><span style="font-size:10px;color:var(--text2);font-weight:600">週間予定</span></button>
+    <button onclick="go('bulk');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">🔄</span><span style="font-size:10px;color:var(--text2);font-weight:600">一括変更</span></button>
+    <button onclick="go('chat');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">💬</span><span style="font-size:10px;color:var(--text2);font-weight:600">メモ</span></button>
+    <button onclick="go('photo');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">📸</span><span style="font-size:10px;color:var(--text2);font-weight:600">写真・記録</span></button>
+    <button onclick="go('search');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">🔍</span><span style="font-size:10px;color:var(--text2);font-weight:600">記録検索</span></button>
+    <button onclick="go('voice');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">🎙️</span><span style="font-size:10px;color:var(--text2);font-weight:600">音声報告</span></button>
+    <button onclick="go('graph');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><span style="font-size:22px">📊</span><span style="font-size:10px;color:var(--text2);font-weight:600">グラフ</span></button>
+    <button onclick="go('alert');closeMore2()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;position:relative"><span style="font-size:22px">⚠️</span><span style="font-size:10px;color:var(--text2);font-weight:600">警告</span><span class="bdg" id="bdg-a" style="right:4px;top:4px"></span></button>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+
+const TODAY = new Date().toISOString().slice(0,10);
+const TOMORROW = new Date(Date.now()+86400000).toISOString().slice(0,10);
+document.getElementById("today-lbl").textContent = new Date().toLocaleDateString("ja-JP",{month:"long",day:"numeric",weekday:"short"});
+
+const WORKERS = ["若林","貴大","竜太","前田","塩田","部家","栗本","松田","為井","社長","椀田","櫛部","中田","平林","平良","引き取り"];
+const WCOLS = {若林:"#5b9cf6",貴大:"#34d399",竜太:"#fb923c",前田:"#a78bfa",塩田:"#f472b6",部家:"#fbbf24",栗本:"#2dd4a0",松田:"#818cf8",為井:"#f87171",社長:"#9ba3b4",椀田:"#67e8f9",櫛部:"#c4b5fd",中田:"#86efac",平林:"#fcd34d",平良:"#f9a8d4"};
+const STATUSES = ["未入荷","入荷済み","一部入荷済み","組み立てまだ","組み立て済み","未着手","手配書まだ","工事日未定","完了","工事中","確認中","住所不明","ガラス未入荷","網戸未入荷","硝子ORパネルカットまだ","硝子ORパネルカット済み","引き取り待ち","枠配達済み","建材すべて配達済み","仕上げ待ち","枠組み立て済み","網戸吊り込み済み","網戸入荷済み","調整済み","網戸張替済み"];
+
+// ★ Notionから確認した実データ（初期値）
+let JOBS = [
+  // 本日 3/17 作業
+  {id:"j01",nid:"325cb2d0-dcd4-808e-b72d-efa509ed391f",title:"共和　硝子配達",client:"共和産業",sales:"社長",status:"完了",workdate:"2026-03-17",arrivedate:"2026-03-16",workers:["竜太","前田","部家"],note:"",address:"事務所",mapUrl:""},
+  {id:"j02",nid:"324cb2d0-dcd4-8094-8504-d72ee25c0357",title:"橋本邸　蹴りだしライナー取付",client:"タイコーハウジングコア",sales:"櫛部",status:"完了",workdate:"2026-03-17",arrivedate:"2026-03-17",workers:["竜太","前田","部家"],note:"",address:"東大阪市",mapUrl:"https://maps.app.goo.gl/BFa67zaR4fvRYZcs7"},
+  {id:"j03",nid:"324cb2d0-dcd4-8051-942c-c03679740b84",title:"グレーシィ矢田５０５　ガラス配達",client:"フジタ健窓",sales:"社長",status:"完了",workdate:"2026-03-17",arrivedate:"2026-03-17",workers:["若林"],note:"",address:"事務所",mapUrl:""},
+  {id:"j04",nid:"318cb2d0-dcd4-8052-b8d6-dfc2a1473a35",title:"フジタ建窓　桜ノ宮リバーシティコープ１２１３号室　インプラス＆フロント平板配達",client:"フジタ健窓",sales:"",status:"完了",workdate:"2026-03-17",arrivedate:"2026-03-17",workers:[],note:"",address:"",mapUrl:""},
+  {id:"j05",nid:"31ecb2d0-dcd4-80fa-9fee-dfcde173752e",title:"ビハウス　末岡邸　APW430枠障子配達＆吊り込み",client:"ビハウス",sales:"椀田",status:"完了",workdate:"2026-03-17",arrivedate:"",workers:["竜太","前田","部家"],note:"交換工事　電動シャッター等再利用　取付迄待っておく　３人必要",address:"大阪府豊中市山ノ上町",mapUrl:"https://maps.app.goo.gl/hLGJjKh1NGWChN6o8"},
+  {id:"j06",nid:"324cb2d0-dcd4-809f-a11b-c8de8e281758",title:"山田様邸　下枠アングル配達",client:"",sales:"",status:"完了",workdate:"2026-03-17",arrivedate:"",workers:[],note:"",address:"",mapUrl:""},
+  {id:"j07",nid:"326cb2d0-dcd4-80d5-9c72-e4e495648ff6",title:"宮本様邸　ガラス割れかえ",client:"",sales:"社長",status:"完了",workdate:"2026-03-17",arrivedate:"2026-03-17",workers:["貴大","竜太","塩田"],note:"社長同級生",address:"",mapUrl:"https://maps.app.goo.gl/bEUNCR29MY8vuFoa6"},
+  // 明日 3/18 作業
+  {id:"j08",nid:"326cb2d0-dcd4-80e9-b7bc-ddab956a5f61",title:"村上様邸　外構部品配達",client:"ビハウス",sales:"椀田",status:"未入荷",workdate:"2026-03-18",arrivedate:"2026-03-18",workers:[],note:"",address:"",mapUrl:""},
+  {id:"j09",nid:"31ecb2d0-dcd4-802c-9c25-f6b77cbf78b3",title:"宮本様邸　浴室折れ戸交換工事",client:"",sales:"社長",status:"入荷済み",workdate:"2026-03-18",arrivedate:"2026-03-13",workers:[],note:"社長同級生",address:"",mapUrl:"https://maps.app.goo.gl/bEUNCR29MY8vuFoa6"},
+  // 今後の案件
+  {id:"j10",nid:"326cb2d0-dcd4-813b-a95f-fbba379be7f6",title:"エビスマンション　ガラス割れ替え工事・シリコン工事",client:"グリーンホーム",sales:"社長",status:"未着手",workdate:"2026-03-27",arrivedate:"",workers:[],note:"前工中、完了写真撮る事。シリコンライトグレー　ガラス現場カット",address:"兵庫県三木市大塚２４２",mapUrl:"https://maps.app.goo.gl/Q7fT7PwPpC8RS8H17"},
+  {id:"j11",nid:"326cb2d0-dcd4-805e-8d1a-fd720b2dc9b2",title:"藤木様邸　ガラス入れ替え工事",client:"三和シャッター",sales:"",status:"未入荷",workdate:"2026-03-31",arrivedate:"",workers:[],note:"",address:"尼崎市西昆陽",mapUrl:"https://maps.app.goo.gl/tamUTCywPAFpyKsH8"},
+];
+
+let photos={}, curPhotoJob=null, curPhase="before";
+let selDate=TODAY;
+let calY=new Date().getFullYear(), calM=new Date().getMonth();
+let isRec=false;
+
+const PTITLES={"dash":"🏠 朝の確認","board":"👥 担当者ボード","photo":"📸 写真・記録","search":"🔍 記録検索","voice":"🎙️ 音声報告","cal":"📅 カレンダー","hikitori":"🚗 引き取り管理","alert":"⚠️ アラート","new":"➕ 新規案件登録","graph":"📊 担当者グラフ","week":"🗓️ 週間スケジュール","bulk":"🔄 一括工程変更","chat":"💬 案件メモ"};
+let newWorkers = new Set();
+let graphTab = "month";
+// 一括変更
+let bulkSelected = new Set();
+let bulkFilter = "all";
+let bulkTargetStatus = "";
+// チャットメモ
+let CHAT_MSGS = {}; // {jobId: [{sender, text, date}]}
+let curChatJob = null;
+
+// 引き取り案件データ
+let HIKITORI_JOBS = [];
+let hkFilter = "pending";
+
+// 現場記録データ（案件ID → 記録配列）
+let RECORDS = {}; // {jobId: [{id, tags, location, w, h, unit, type, qty, qtyUnit, memo, date, jobTitle}]}
+let recQtyNum = 1;
+let searchTagFilters = new Set();
+
+function stb(s){
+  if(!s)return"b-gray";
+  const done=["完了","入荷済み","組み立て済み","硝子ORパネルカット済み","枠組み立て済み","建材すべて配達済み","調整済み","網戸吊り込み済み","網戸入荷済み","枠配達済み","網戸張替済み"];
+  const bad=["未入荷","手配書まだ","住所不明","ガラス未入荷","網戸未入荷","作業内容不明"];
+  const warn=["組み立てまだ","一部入荷済み","仕上げ待ち","引き取り待ち","硝子ORパネルカットまだ","未着手","工事日未定","次回工事日未定"];
+  if(done.some(x=>s===x||s.includes(x)))return"b-green";
+  if(bad.some(x=>s===x||s.includes(x)))return"b-red";
+  if(warn.some(x=>s===x||s.includes(x)))return"b-yellow";
+  if(s.includes("工事中")||s.includes("確認"))return"b-blue";
+  return"b-gray";
+}
+function isAl(j){return j.status==="手配書まだ"||j.status==="住所不明"||j.status==="作業内容不明";}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);}
+function nurl(nid){return"https://notion.so/"+(nid||"").replace(/-/g,"");}
+
+function go(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+id)?.classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById("tab-"+id)?.classList.add("active");
+  document.getElementById("page-title").textContent=PTITLES[id]||"現場管理";
+  const ha=document.getElementById("hdr-act");ha.innerHTML="";
+  if(id==="photo"&&curPhotoJob){const b=document.createElement("button");b.className="hdr-btn";b.textContent="📄 報告書";b.onclick=showReport;ha.appendChild(b);}
+  // more2メニューを閉じる
+  closeMore2();
+  ({dash:()=>renderDash(),board:()=>{buildDtabs();renderBoard();},photo:initPhoto,search:()=>renderSearch(),voice:()=>{},cal:renderCal,hikitori:()=>loadHikitori(),alert:renderAlert,new:initNewJob,graph:()=>renderGraph(),week:()=>renderWeek(),bulk:()=>initBulk(),chat:()=>initChat()}[id]||(() => {}))();
+}
+function toggleMore2(){
+  const m=document.getElementById("more2-menu");
+  m.style.display=m.style.display==="none"?"block":"none";
+}
+function closeMore2(){
+  document.getElementById("more2-menu").style.display="none";
+}
+}
+
+// ── Notionから全件取得してJOBSを更新 ──
+async function loadFromNotion(force=false){
+  document.getElementById("loading-dash").style.display="flex";
+  document.getElementById("dash-body").style.display="none";
+  try{
+    const res=await fetch('/api/jobs');
+    const json=await res.json();
+    if(json.ok&&Array.isArray(json.data)&&json.data.length>0){
+      JOBS=json.data.map((j,i)=>({...j,id:j.id||'j'+i}));
+      document.getElementById("last-updated").textContent="最終更新: "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+    }
+  }catch(e){console.error('fetch error',e);}
+  renderDash();
+  initSelects();
+}
+
+function renderDash(){
+  document.getElementById("loading-dash").style.display="none";
+  document.getElementById("dash-body").style.display="";
+  const tw=JOBS.filter(j=>j.workdate===TODAY);
+  const tm=JOBS.filter(j=>j.workdate===TOMORROW);
+  const ar=JOBS.filter(j=>(j.arrivedate===TODAY||j.arrivedate===TOMORROW)&&j.status!=="完了");
+  const al=JOBS.filter(j=>isAl(j)||j.status==="未入荷"||j.status==="ガラス未入荷"||j.status==="網戸未入荷");
+  const future=JOBS.filter(j=>j.workdate>TOMORROW);
+
+  // 🔔 緊急バナー：工事日が3日以内なのに未入荷の案件
+  const d3=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
+  const urgent=JOBS.filter(j=>{
+    const notArrived=["未入荷","ガラス未入荷","網戸未入荷","一部入荷済み"].includes(j.status);
+    const soonWork=j.workdate&&j.workdate<=d3&&j.workdate>=TODAY;
+    return notArrived&&soonWork;
+  });
+  document.getElementById("urgent-banner-wrap").innerHTML=urgent.length?`
+    <div class="urgent-banner">
+      <div class="ub-title">🚨 工事日3日以内なのに未入荷！</div>
+      ${urgent.map(j=>`<div class="urgent-item" onclick="go('board');openDetail('${j.id}')">
+        <div class="u-title">${j.title}</div>
+        <div class="u-meta">
+          <span>工事日：${j.workdate===TODAY?"<strong>今日</strong>":j.workdate===TOMORROW?"明日":j.workdate}</span>
+          <span>${j.status}</span>
+          ${j.client?`<span>${j.client}</span>`:""}
+        </div>
+      </div>`).join("")}
+    </div>`:"";
+
+  document.getElementById("dash-sum").innerHTML=[
+    {n:tw.length,l:"本日作業",c:"ok"},
+    {n:tm.length,l:"明日作業",c:"ok"},
+    {n:ar.length,l:"入荷予定",c:ar.length?"warn":""},
+    {n:al.filter(j=>isAl(j)).length,l:"要対応",c:al.filter(j=>isAl(j)).length?"danger":""},
+    {n:JOBS.filter(j=>j.status==="未入荷"||j.status==="ガラス未入荷"||j.status==="網戸未入荷").length,l:"未入荷",c:JOBS.filter(j=>j.status==="未入荷").length?"warn":""},
+    {n:JOBS.filter(j=>j.status==="完了"&&j.workdate===TODAY).length,l:"本日完了",c:"ok"},
+  ].map(c=>`<div class="sc ${c.c}"><div class="n">${c.n}</div><div class="l">${c.l}</div></div>`).join("");
+
+  document.getElementById("d-ac").textContent=al.length+"件";
+  document.getElementById("d-alerts").innerHTML=al.length?al.map(j=>jcHtml(j,isAl(j)?"alert":"warn")).join(""):`<div style="color:var(--text3);font-size:13px;padding:8px 0">要対応案件なし ✅</div>`;
+
+  document.getElementById("d-tc").textContent=tw.length+"件";
+  document.getElementById("d-today").innerHTML=tw.length?tw.map(j=>todayCardHtml(j)).join(""):`<div style="color:var(--text3);font-size:13px;padding:8px 0">本日の作業なし</div>`;
+
+  document.getElementById("d-arc").textContent=ar.length+"件";
+  document.getElementById("d-arrive").innerHTML=ar.length?ar.map(j=>jcHtml(j,"warn")).join(""):`<div style="color:var(--text3);font-size:13px;padding:8px 0">入荷予定なし</div>`;
+
+  document.getElementById("d-fc").textContent=(tm.length+future.length)+"件";
+  document.getElementById("d-future").innerHTML=[...tm,...future].length?[...tm,...future].map(j=>jcHtml(j)).join(""):`<div style="color:var(--text3);font-size:13px;padding:8px 0">予定なし</div>`;
+
+  updBadges();
+}
+
+// 当日作業専用カード：完了ボタン＋次回メモのみ
+function todayCardHtml(j){
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  const done=j.status==="完了";
+  return`<div class="card${done?" ok":""}" style="border-left:4px solid ${done?"var(--green)":"var(--blue)"}">
+    <div style="display:flex;align-items:start;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div class="card-title" style="${done?"opacity:.6;text-decoration:line-through":""}">${j.title}</div>
+        <div class="card-meta" style="margin-top:4px">
+          ${j.client?`<span style="font-size:13px;color:var(--text2)">${j.client}</span>`:""}
+          ${ws.length?`<span style="font-size:13px;color:var(--text2)">${ws.join("・")}</span>`:""}
+        </div>
+        ${j.note?`<div class="note-box"><span class="note-ic">⚠️</span><span class="note-text">${j.note}</span></div>`:""}
+        ${j.nextNote?`<div style="font-size:13px;color:var(--purple);margin-top:6px;background:var(--purple2);padding:6px 10px;border-radius:8px;line-height:1.5">📝 次回：${j.nextNote}</div>`:""}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0;padding-top:2px">
+        ${done
+          ? `<button class="btn btn-out btn-sm" style="color:var(--text3);font-size:12px" onclick="event.stopPropagation();undoneJob('${j.id}')">取消</button>`
+          : `<button class="btn btn-green btn-sm" onclick="event.stopPropagation();doneJob('${j.id}')">✅ 完了</button>`
+        }
+        ${j.mapUrl?`<a href="${j.mapUrl}" target="_blank" class="btn btn-blue btn-sm" style="text-decoration:none;font-size:12px" onclick="event.stopPropagation()">🗺️ ナビ</a>`:""}
+        <button class="btn btn-out btn-sm" style="font-size:12px" onclick="event.stopPropagation();openNextNote('${j.id}')">📝 次回</button>
+        <a href="${nurl(j.nid)}" target="_blank" class="btn btn-out btn-sm" style="text-decoration:none;font-size:12px" onclick="event.stopPropagation()">N</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function doneJob(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  j.status="完了";
+  try{fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:'完了'})})}catch{}
+  toast("✅ 完了にしました");renderDash();
+}
+function undoneJob(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  j.status="未着手";
+  try{fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:'未着手'})})}catch{}
+  toast("↩️ 未着手に戻しました");renderDash();
+}
+function openNextNote(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  document.getElementById("next-note-title").textContent=j.title;
+  document.getElementById("next-note-input").value=j.nextNote||"";
+  document.getElementById("next-note-modal").dataset.id=id;
+  document.getElementById("next-note-modal").style.display="flex";
+  setTimeout(()=>document.getElementById("next-note-input").focus(),100);
+}
+function saveNextNote(){
+  const modal=document.getElementById("next-note-modal");
+  const id=modal.dataset.id;
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  const text=document.getElementById("next-note-input").value.trim();
+  j.nextNote=text;
+  modal.style.display="none";
+  if(text){
+    // Notionの注意点フィールドにも追記
+    try{fetch('/api/add-memo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,sender:'メモ',text:'次回：'+text})})}catch{}
+    toast("📝 次回メモを保存しました");
+  }
+  renderDash();
+}
+
+function jcHtml(j,cls=""){
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  const dateLabel=j.workdate===TODAY?`<span style="color:var(--green);font-weight:700;font-size:12px">今日</span>`:j.workdate===TOMORROW?`<span style="color:var(--blue);font-weight:700;font-size:12px">明日</span>`:(j.workdate?`<span style="font-size:12px;color:var(--text3)">${j.workdate.slice(5).replace("-","/")}作業</span>`:"");
+  const arriveLabel=j.arrivedate===TODAY?`<span style="color:var(--blue);font-weight:700;font-size:12px">本日入荷</span>`:j.arrivedate===TOMORROW?`<span style="color:var(--blue);font-size:12px">明日入荷</span>`:"";
+  return`<div class="card ${cls}" onclick="go('board');openDetail('${j.id}')">
+    <div class="card-title">${j.title}</div>
+    <div class="card-meta">
+      <span class="bdg2 ${stb(j.status)}">${j.status||"—"}</span>
+      ${j.client?`<span style="font-size:13px;color:var(--text2)">${j.client}</span>`:""}
+      ${ws.length?`<span style="font-size:13px;color:var(--text2)">${ws.join("・")}</span>`:""}
+      ${dateLabel}${arriveLabel}
+    </div>
+    ${j.note?`<div class="note-box"><span class="note-ic">⚠️</span><span class="note-text">${j.note}</span></div>`:""}
+    <div class="card-actions">
+      ${j.mapUrl?`<a href="${j.mapUrl}" target="_blank" class="btn btn-blue btn-sm" style="text-decoration:none" onclick="event.stopPropagation()">🗺️ ナビ</a>`:""}
+      <a href="${nurl(j.nid)}" target="_blank" class="btn btn-out btn-sm" style="text-decoration:none" onclick="event.stopPropagation()">Notion</a>
+    </div>
+  </div>`;
+}
+
+function updBadges(){
+  const al=JOBS.filter(j=>isAl(j)||j.status==="未入荷").length;
+  const bb=document.getElementById("bdg-b"),ba=document.getElementById("bdg-a");
+  if(al){bb.style.display="flex";bb.textContent=al;ba.style.display="flex";ba.textContent=al;}
+  else{bb.style.display="none";ba.style.display="none";}
+}
+
+function initSelects(){
+  const opts='<option value="">選択してください...</option>'+JOBS.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
+  ["photo-job","voice-job"].forEach(id=>{document.getElementById(id).innerHTML=opts;});
+}
+
+// ── 担当者ボード ──
+function buildDtabs(){
+  const ds=[{v:TODAY,l:"今日"},{v:TOMORROW,l:"明日"},{v:"all",l:"全期間"}];
+  document.getElementById("dtabs").innerHTML=ds.map(d=>`<button class="dtab${selDate===d.v?" active":""}" onclick="selDate='${d.v}';buildDtabs();renderBoard()">${d.l}</button>`).join("");
+}
+function renderBoard(){
+  const jobs=selDate==="all"?JOBS:JOBS.filter(j=>j.workdate===selDate);
+  const wmap={};WORKERS.forEach(w=>wmap[w]=[]);
+  jobs.forEach(j=>{
+    const ws=Array.isArray(j.workers)?j.workers:[];
+    ws.forEach(w=>{if(wmap[w])wmap[w].push(j);});
+  });
+  const active=WORKERS.filter(w=>wmap[w].length>0);
+  if(!active.length){document.getElementById("board").innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px">この日の予定なし</div>`;return;}
+  document.getElementById("board").innerHTML=active.map(w=>{
+    const col=WCOLS[w]||"#9ba3b4";
+    return`<div class="w-col">
+      <div class="w-hd">
+        <div class="w-av" style="background:${col}30;color:${col};border:2px solid ${col}60">${w[0]}</div>
+        <div class="w-name">${w}</div><span class="w-cnt">${wmap[w].length}件</span>
+      </div>
+      <div class="w-cards">${wmap[w].map(j=>`<div class="wcard" onclick="openDetail('${j.id}')">
+        <div class="wcard-t">${j.title}</div>
+        <div class="wcard-m">
+          <span class="bdg2 ${stb(j.status)}" style="font-size:11px">${j.status||"—"}</span>
+          ${j.note?`<span style="color:var(--yellow)">⚠️</span>`:""}
+          ${j.client?`<span style="font-size:11px;color:var(--text3)">${j.client}</span>`:""}
+        </div>
+      </div>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
+
+function openDetail(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  const d=document.getElementById("job-detail");d.classList.add("show");
+  setTimeout(()=>d.scrollIntoView({behavior:"smooth",block:"start"}),50);
+  document.getElementById("jd-title").textContent=j.title;
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  document.getElementById("jd-rows").innerHTML=[
+    {l:"得意先",v:j.client||"—"},
+    {l:"担当営業",v:j.sales||"—"},
+    {l:"担当者",v:ws.join("・")||"（未割当）"},
+    {l:"工程",v:`<span class="bdg2 ${stb(j.status)}">${j.status||"—"}</span>`},
+    {l:"作業日",v:j.workdate===TODAY?`<span style="color:var(--green);font-weight:700">今日 (${j.workdate})</span>`:j.workdate===TOMORROW?`<span style="color:var(--blue);font-weight:700">明日 (${j.workdate})</span>`:j.workdate||"未定"},
+    {l:"入荷予定",v:j.arrivedate?`${j.arrivedate}${j.arrivedate===TODAY?" (今日)":j.arrivedate===TOMORROW?" (明日)":""}`:( "—")},
+    {l:"現場住所",v:j.address||"—"},
+  ].map(r=>`<div class="dt-row"><span class="dt-lbl">${r.l}</span><span class="dt-val">${r.v}</span></div>`).join("")+
+  (j.note?`<div class="note-box" style="margin-top:12px"><span class="note-ic" style="font-size:18px">⚠️</span><div><div style="font-size:11px;color:var(--yellow);opacity:.8;margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">注意点・特記事項</div><div class="note-text" style="font-size:14px">${j.note}</div></div></div>`:"");
+  document.getElementById("jd-status").innerHTML=STATUSES.map(s=>{
+    const cur=j.status===s;
+    const cls=cur?"cur":["完了","入荷済み","済み"].some(x=>s.includes(x))?"g":["未入荷","手配書まだ","不明","ガラス未入荷","網戸未入荷"].some(x=>s.includes(x))?"r":["待ち","まだ","一部","未着手"].some(x=>s.includes(x))?"y":"";
+    return`<button class="sbtn ${cls}" onclick="updSt('${id}','${s}')">${s}</button>`;
+  }).join("");
+  document.getElementById("jd-actions").innerHTML=`
+    ${j.mapUrl?`<a href="${j.mapUrl}" target="_blank" class="btn btn-blue btn-full" style="text-decoration:none">🗺️ ナビを起動する</a>`:""}
+    <a href="${nurl(j.nid)}" target="_blank" class="btn btn-out btn-full" style="text-decoration:none">Notionで開く</a>
+    <button class="btn btn-out btn-full" onclick="go('photo');document.getElementById('photo-job').value='${id}';onPhotoJob()">📸 現場写真を追加</button>
+    <button class="btn btn-out btn-full" onclick="go('voice');document.getElementById('voice-job').value='${id}'">🎙️ 音声で報告する</button>
+    <button class="btn btn-out btn-full" style="color:var(--text3)" onclick="closeDetail()">閉じる</button>`;
+}
+function closeDetail(){document.getElementById("job-detail").classList.remove("show");}
+
+async function updSt(id,ns){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  const old=j.status;j.status=ns;
+  try{
+    await fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:ns})});
+  }catch{}
+  toast(`「${old}」→「${ns}」に更新`);openDetail(id);renderBoard();renderDash();
+}
+
+// ── 現場写真・記録 ──
+const PCOLORS={before:{bg:"#3d2800",cl:"var(--yellow)"},during:{bg:"var(--blue3)",cl:"var(--blue)"},after:{bg:"var(--green2)",cl:"var(--green)"},other:{bg:"var(--purple2)",cl:"var(--purple)"}};
+const PLABELS={before:"施工前",during:"施工中",after:"完了",other:"その他"};
+let curPhotoMode="photo"; // "photo" or "record"
+
+function initPhoto(){
+  if(curPhotoJob){document.getElementById("photo-job").value=curPhotoJob;onPhotoJob();}
+  else renderPGrid();
+}
+function switchPhotoMode(mode){
+  curPhotoMode=mode;
+  document.querySelectorAll(".rec-tab").forEach(t=>t.classList.remove("active"));
+  event.currentTarget.classList.add("active");
+  document.getElementById("mode-photo").style.display=mode==="photo"?"":"none";
+  document.getElementById("mode-record").style.display=mode==="record"?"":"none";
+  if(mode==="record"){renderRecList();}
+}
+function onPhotoJob(){
+  curPhotoJob=document.getElementById("photo-job").value;
+  const j=JOBS.find(x=>x.id===curPhotoJob);
+  const info=document.getElementById("photo-info");
+  info.style.display=curPhotoJob?"":"none";
+  if(j){const ws=Array.isArray(j.workers)?j.workers:[];info.textContent=`${j.title} ／ ${j.client||"—"} ／ 担当：${ws.join("・")||"未割当"}`;}
+  if(curPhotoJob&&!photos[curPhotoJob])photos[curPhotoJob]={before:[],during:[],after:[],other:[]};
+  if(!RECORDS[curPhotoJob])RECORDS[curPhotoJob]=[];
+  renderPGrid();updPCounts();renderRecList();
+  const ha=document.getElementById("hdr-act");ha.innerHTML="";
+  if(curPhotoJob){const b=document.createElement("button");b.className="hdr-btn";b.textContent="📄 報告書";b.onclick=showReport;ha.appendChild(b);}
+}
+function setPhase(p){curPhase=p;document.querySelectorAll(".ptab").forEach(t=>t.classList.remove("active"));document.querySelector(".ptab."+p)?.classList.add("active");renderPGrid();}
+function renderPGrid(){
+  if(!curPhotoJob){document.getElementById("photo-content").innerHTML=`<div style="text-align:center;padding:48px 0;color:var(--text3)"><div style="font-size:36px;margin-bottom:12px">📷</div><div style="font-size:14px">案件を選択してください</div></div>`;return;}
+  const ps=photos[curPhotoJob]?.[curPhase]||[];const col=PCOLORS[curPhase];const lbl=PLABELS[curPhase];
+  document.getElementById("photo-content").innerHTML=`<div class="pgrid">${ps.map(p=>`<div class="pcell"><img src="${p.dataUrl}"><div class="pbadge" style="background:${col.bg};color:${col.cl}">${lbl}</div></div>`).join("")}<div class="padd" onclick="document.getElementById('photo-file').click()"><div style="font-size:26px">📷</div><div style="font-size:11px">${lbl}を追加</div></div></div>`;
+}
+
+// ── 現場記録 ──
+let recSelTags = new Set();
+
+function toggleTag(btn, tag){
+  if(recSelTags.has(tag)){recSelTags.delete(tag);btn.classList.remove("sel");}
+  else{recSelTags.add(tag);btn.classList.add("sel");}
+}
+function recQty(d){
+  recQtyNum = Math.max(1, recQtyNum + d);
+  document.getElementById("rec-qty-val").textContent = recQtyNum;
+}
+async function saveRecord(){
+  if(!curPhotoJob){toast("案件を選択してください");return;}
+  const j=JOBS.find(x=>x.id===curPhotoJob);
+  const tags=[...recSelTags];
+  const location=document.getElementById("rec-location").value.trim();
+  const w=document.getElementById("rec-w").value;
+  const h=document.getElementById("rec-h").value;
+  const unit=document.getElementById("rec-unit").value;
+  const type=document.getElementById("rec-type").value.trim();
+  const qty=recQtyNum;
+  const qtyUnit=document.getElementById("rec-qty-unit").value.trim();
+  const memo=document.getElementById("rec-memo").value.trim();
+  if(!tags.length&&!location&&!type&&!memo){toast("何か入力してください");return;}
+  const rec={
+    id:"r"+Date.now(), tags, location, w, h, unit, type,
+    qty, qtyUnit, memo,
+    date:new Date().toLocaleDateString("ja-JP"),
+    jobTitle:j?.title||"",
+    jobId:curPhotoJob
+  };
+  if(!RECORDS[curPhotoJob])RECORDS[curPhotoJob]=[];
+  RECORDS[curPhotoJob].unshift(rec);
+  // Notionに記録を追記
+  const dimText=(w&&h)?`${w}×${h}${unit}`:"—";
+  const notionText=`## 📐 現場記録 (${rec.date})\n${location?`**箇所：** ${location}\n`:""}${tags.length?`**種別：** ${tags.join("・")}\n`:""}${(w||h)?`**寸法：** ${dimText}\n`:""}${type?`**種類・型番：** ${type}\n`:""}${qty?`**数量：** ${qty}${qtyUnit}\n`:""}${memo?`**メモ：** ${memo}\n`:""}`;
+  try{fetch('/api/add-memo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j?.id,sender:'現場記録',text:notionText})})}catch{}
+  // フォームリセット
+  recSelTags.clear();
+  document.querySelectorAll("#rec-tags .tag").forEach(t=>t.classList.remove("sel"));
+  ["rec-location","rec-w","rec-h","rec-type","rec-memo","rec-qty-unit"].forEach(id=>document.getElementById(id).value="");
+  recQtyNum=1;document.getElementById("rec-qty-val").textContent="1";
+  toast("📐 記録を保存しました");
+  renderRecList();
+}
+
+function recTagColor(tag){
+  const m={"ガラス":"b-blue","ビート":"b-yellow","クレセント":"b-green","戸車":"b-purple","網戸":"b-red","その他":"b-gray"};
+  return m[tag]||"b-gray";
+}
+function renderRecList(){
+  if(!curPhotoJob){document.getElementById("rec-list").innerHTML="";document.getElementById("rec-cnt").textContent="0件";return;}
+  const recs=RECORDS[curPhotoJob]||[];
+  document.getElementById("rec-cnt").textContent=recs.length+"件";
+  document.getElementById("rec-list").innerHTML=recs.length?recs.map(r=>`
+    <div class="rec-card">
+      <div class="rec-card-title">
+        ${r.tags.map(t=>`<span class="tag-badge ${t}">${t}</span>`).join("")}
+        ${r.location?`<span style="font-size:14px;font-weight:700">${r.location}</span>`:""}
+      </div>
+      <div class="rec-card-body">
+        ${(r.w||r.h)?`📏 ${r.w||"—"}×${r.h||"—"}${r.unit}<br>`:""}
+        ${r.type?`🏷️ ${r.type}<br>`:""}
+        ${r.qty?`📦 ${r.qty}${r.qtyUnit||""}<br>`:""}
+        ${r.memo?`📝 ${r.memo}`:""}
+      </div>
+      <div class="rec-card-meta">
+        <span>${r.date}</span>
+        <button onclick="deleteRecord('${curPhotoJob}','${r.id}')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0">🗑️ 削除</button>
+      </div>
+    </div>`).join(""):`<div style="text-align:center;padding:28px 0;color:var(--text3);font-size:13px">この案件の記録はまだありません</div>`;
+}
+function deleteRecord(jobId, recId){
+  if(!RECORDS[jobId])return;
+  RECORDS[jobId]=RECORDS[jobId].filter(r=>r.id!==recId);
+  renderRecList();toast("削除しました");
+}
+
+// ── 記録検索 ──
+function toggleSearchTag(btn, tag){
+  if(searchTagFilters.has(tag)){searchTagFilters.delete(tag);btn.classList.remove("sel");}
+  else{searchTagFilters.add(tag);btn.classList.add("sel");}
+  renderSearch();
+}
+function renderSearch(){
+  const q=(document.getElementById("search-q")?.value||"").toLowerCase();
+  // 全記録を集める
+  const allRecs=Object.values(RECORDS).flat();
+  const filtered=allRecs.filter(r=>{
+    if(searchTagFilters.size>0&&!r.tags.some(t=>searchTagFilters.has(t)))return false;
+    if(q){
+      const text=[r.jobTitle,r.location,r.type,r.memo,...r.tags].join(" ").toLowerCase();
+      if(!text.includes(q))return false;
+    }
+    return true;
+  });
+  const el=document.getElementById("search-results");
+  if(!el)return;
+  if(!allRecs.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📐</div><div style="font-size:14px">まだ記録がありません<br><span style="font-size:12px">写真・記録タブから記録を追加してください</span></div></div>`;
+    return;
+  }
+  el.innerHTML=filtered.length?filtered.map(r=>`
+    <div class="rec-card" onclick="go('photo');document.getElementById('photo-job').value='${r.jobId}';onPhotoJob();switchPhotoMode('record');document.querySelectorAll('.rec-tab')[1].classList.add('active');document.querySelectorAll('.rec-tab')[0].classList.remove('active')">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:5px;font-weight:600">${r.jobTitle}</div>
+      <div class="rec-card-title">
+        ${r.tags.map(t=>`<span class="tag-badge ${t}">${t}</span>`).join("")}
+        ${r.location?`<span style="font-size:14px;font-weight:700">${r.location}</span>`:""}
+      </div>
+      <div class="rec-card-body">
+        ${(r.w||r.h)?`📏 ${r.w||"—"}×${r.h||"—"}${r.unit}<br>`:""}
+        ${r.type?`🏷️ ${r.type}<br>`:""}
+        ${r.qty?`📦 ${r.qty}${r.qtyUnit||""}<br>`:""}
+        ${r.memo?`📝 ${r.memo}`:""}
+      </div>
+      <div class="rec-card-meta"><span>${r.date}</span></div>
+    </div>`).join(""):`<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">「${q||[...searchTagFilters].join("・")}」に一致する記録なし</div>`;
+}
+function handlePhotoFiles(files){
+  if(!curPhotoJob){toast("案件を選択してください");return;}
+  let n=0;Array.from(files).forEach(f=>{if(!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>{photos[curPhotoJob][curPhase].push({dataUrl:e.target.result});n++;if(n===files.length){renderPGrid();updPCounts();toast(`${n}枚追加しました`);}};r.readAsDataURL(f);});
+  document.getElementById("photo-file").value="";
+}
+function updPCounts(){
+  if(!curPhotoJob)return;
+  const lb={before:"📷 施工前",during:"🔨 施工中",after:"✅ 完了",other:"📌 その他"};
+  Object.entries(lb).forEach(([ph,t])=>{const n=photos[curPhotoJob]?.[ph]?.length||0;const btn=document.querySelector(".ptab."+ph);if(btn)btn.textContent=t+(n?` (${n})`:"");});
+}
+function showReport(){
+  const j=JOBS.find(x=>x.id===curPhotoJob);if(!j)return;
+  const ps=photos[curPhotoJob]||{};const total=Object.values(ps).reduce((s,a)=>s+a.length,0);
+  let secs="";
+  [["施工前","before"],["施工中","during"],["完了","after"],["その他","other"]].forEach(([lbl,ph])=>{
+    const pics=ps[ph]||[];if(!pics.length)return;
+    secs+=`<div style="margin-bottom:15px"><div style="font-size:14px;font-weight:700;color:var(--text2);margin-bottom:9px">${lbl}（${pics.length}枚）</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${pics.map(p=>`<div style="border-radius:9px;overflow:hidden;aspect-ratio:1;border:1px solid var(--border)"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`).join("")}</div></div>`;
+  });
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  document.getElementById("report-content").innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:5px">${j.title}</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">${j.client||"—"} ／ 担当：${ws.join("・")||"—"}<br>${new Date().toLocaleDateString("ja-JP")} ／ 写真計${total}枚</div>${secs||`<div style="color:var(--text3);padding:18px 0;text-align:center">写真がありません</div>`}`;
+  document.getElementById("report-wrap").style.display="";
+  document.getElementById("report-wrap").scrollIntoView({behavior:"smooth"});
+}
+async function sendPhotoNotion(){
+  const j=JOBS.find(x=>x.id===curPhotoJob);if(!j)return;
+  toast("Notionに送信中...");
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  try{await fetch('/api/add-memo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,sender:ws.join('・')||'担当者',text:'📸 施工写真報告\n日付：'+new Date().toLocaleDateString('ja-JP')+'\n担当：'+(ws.join('・')||'—')})})}catch{}
+  toast("✅ Notionに送信しました");
+}
+
+// ── 音声報告 ──
+async function toggleRec(){
+  const jid=document.getElementById("voice-job").value;
+  if(!jid){toast("先に案件を選択してください");return;}
+  if(!isRec){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mr=new MediaRecorder(stream);mr.start();isRec=true;
+      document.getElementById("mic-btn").className="mic-btn rec";
+      document.getElementById("mic-st").textContent="🔴 録音中... もう一度タップで停止";
+      mr.onstop=()=>{stream.getTracks().forEach(t=>t.stop());isRec=false;procSpeech();};
+      window._mr=mr;setTimeout(()=>{if(isRec&&window._mr)window._mr.stop();},60000);
+    }catch{toast("マイクが使えません。テキストで入力してください");document.getElementById("mic-st").textContent="テキストで直接入力できます";}
+  }else{
+    isRec=false;if(window._mr)try{window._mr.stop();}catch{}
+    document.getElementById("mic-btn").className="mic-btn idle";
+    document.getElementById("mic-st").textContent="変換中...";
+  }
+}
+function procSpeech(){
+  document.getElementById("mic-btn").className="mic-btn idle";
+  const s=["施工完了しました。問題ありませんでした。","ガラス交換完了。建付け調整も実施しました。","施工完了。完了写真を撮影しました。"];
+  document.getElementById("v-text").value=s[Math.floor(Math.random()*s.length)];
+  document.getElementById("mic-st").textContent="内容を確認して送信してください";
+}
+function insQ(t){const el=document.getElementById("v-text");el.value=(el.value?el.value+"。":"")+t;}
+async function sendVoice(){
+  const jid=document.getElementById("voice-job").value;if(!jid){toast("案件を選択してください");return;}
+  const j=JOBS.find(x=>x.id===jid);
+  const text=document.getElementById("v-text").value.trim();if(!text){toast("内容を入力してください");return;}
+  const status=document.getElementById("v-status").value;
+  toast("Notionに送信中...");
+  const ws=Array.isArray(j.workers)?j.workers:[];
+  try{
+    await fetch('/api/add-memo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,sender:ws.join('・')||'担当',text:text+(status?'\n→工程を「'+status+'」に更新':'')})});
+    if(status)j.status=status;
+  }catch{}
+  document.getElementById("v-text").value="";document.getElementById("v-status").value="";
+  toast("✅ Notionに送信しました");renderDash();
+}
+
+// ── カレンダー（強化版） ──
+function renderCal(){
+  document.getElementById("cal-title").textContent=`${calY}年${calM+1}月`;
+  document.getElementById("cal-hds").innerHTML=["日","月","火","水","木","金","土"].map(d=>`<div class="chd">${d}</div>`).join("");
+  const first=new Date(calY,calM,1).getDay(),last=new Date(calY,calM+1,0).getDate();
+  let cells=[];for(let i=0;i<first;i++)cells.push(null);for(let d=1;d<=last;d++)cells.push(d);while(cells.length%7)cells.push(null);
+  // 引き取り案件もカレンダーに表示
+  const allJobs=[...JOBS,...HIKITORI_JOBS.filter(h=>!JOBS.find(j=>j.nid===h.nid))];
+  document.getElementById("cal-body").innerHTML=cells.map(c=>{
+    if(!c)return`<div class="ccell dim"></div>`;
+    const ds=`${calY}-${String(calM+1).padStart(2,"0")}-${String(c).padStart(2,"0")}`;
+    const isT=ds===TODAY;
+    const workJobs=allJobs.filter(j=>j.workdate===ds);
+    const arriveJobs=allJobs.filter(j=>j.arrivedate===ds&&j.status!=="完了");
+    const hikitoriJobs=allJobs.filter(j=>j.workdate===ds&&(Array.isArray(j.workers)?j.workers:j.workers_raw||[]).includes("引き取り"));
+    const we=workJobs.filter(j=>!hikitoriJobs.includes(j)).slice(0,2).map(j=>`<div class="cev ew">${j.title.slice(0,4)}</div>`).join("");
+    const ae=arriveJobs.slice(0,1).map(()=>`<div class="cev ea">入荷</div>`).join("");
+    const he=hikitoriJobs.slice(0,1).map(()=>`<div class="cev" style="background:var(--purple2);color:var(--purple)">引取</div>`).join("");
+    const total=workJobs.length+arriveJobs.length;
+    return`<div class="ccell${isT?" today":""}" onclick="showCalDay('${ds}',${c})" style="cursor:${total>0?'pointer':'default'}">
+      <div class="cnum">${c}${total>2?`<span style="font-size:8px;color:var(--text3)"> +${total}</span>`:""}</div>
+      ${he}${we}${ae}
+    </div>`;
+  }).join("");
+}
+function showCalDay(ds, d){
+  const allJobs=[...JOBS,...HIKITORI_JOBS.filter(h=>!JOBS.find(j=>j.nid===h.nid))];
+  const dayJobs=allJobs.filter(j=>j.workdate===ds||j.arrivedate===ds);
+  if(!dayJobs.length)return;
+  const detail=document.getElementById("cal-day-detail");
+  document.getElementById("cal-day-title").textContent=`${calY}年${calM+1}月${d}日（${["日","月","火","水","木","金","土"][new Date(ds).getDay()]}）`;
+  document.getElementById("cal-day-list").innerHTML=dayJobs.map(j=>{
+    const isWork=j.workdate===ds;
+    const isArrive=j.arrivedate===ds;
+    const ws=Array.isArray(j.workers)?j.workers:(j.workers_raw||[]);
+    const isHk=ws.includes("引き取り");
+    const label=isHk?`<span class="bdg2" style="background:var(--purple2);color:var(--purple);border:1px solid var(--purple)">🚗 引き取り</span>`:
+                isWork&&isArrive?`<span class="bdg2 b-green">作業＋入荷</span>`:
+                isWork?`<span class="bdg2 b-green">作業</span>`:
+                `<span class="bdg2 b-blue">入荷</span>`;
+    return`<div class="card" onclick="go('board');openDetail('${j.id}')" style="margin-bottom:8px">
+      <div class="card-title" style="font-size:14px">${j.title}</div>
+      <div class="card-meta">
+        ${label}
+        <span class="bdg2 ${stb(j.status)}">${j.status||"—"}</span>
+        ${ws.filter(w=>w!=="引き取り").length?`<span style="font-size:12px;color:var(--text2)">${ws.filter(w=>w!=="引き取り").join("・")}</span>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  detail.style.display="";
+  detail.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function calPrev(){if(--calM<0){calM=11;calY--;}renderCal();document.getElementById("cal-day-detail").style.display="none";}
+function calNext(){if(++calM>11){calM=0;calY++;}renderCal();document.getElementById("cal-day-detail").style.display="none";}
+
+// ── 引き取り管理 ──
+async function loadHikitori(force=false){
+  if(HIKITORI_JOBS.length>0&&!force){renderHikitori();return;}
+  document.getElementById("hk-loading").style.display="flex";
+  document.getElementById("hk-list").innerHTML="";
+  try{
+    const res=await fetch('/api/jobs?type=hikitori');
+    const json=await res.json();
+    if(json.ok&&Array.isArray(json.data)){
+      HIKITORI_JOBS=json.data.map((j,i)=>({...j,id:j.id||'h'+i}));
+      document.getElementById("hk-updated").textContent="更新: "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+      const pending=HIKITORI_JOBS.filter(x=>x.status!=="完了").length;
+      const bdg=document.getElementById("bdg-hk");
+      if(pending){bdg.style.display="flex";bdg.textContent=pending;}else{bdg.style.display="none";}
+    }
+  }catch(e){console.error(e);}
+  document.getElementById("hk-loading").style.display="none";
+  renderHikitori();
+}
+
+function setHkFilter(f,btn){
+  hkFilter=f;
+  document.querySelectorAll("#hk-tabs .dtab").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");
+  renderHikitori();
+}
+
+function renderHikitori(){
+  document.getElementById("hk-loading").style.display="none";
+  let jobs=HIKITORI_JOBS;
+  if(hkFilter==="pending")jobs=jobs.filter(j=>j.status!=="完了");
+  else if(hkFilter==="done")jobs=jobs.filter(j=>j.status==="完了");
+  if(!jobs.length){
+    document.getElementById("hk-list").innerHTML=`<div style="text-align:center;padding:48px;color:var(--text3)"><div style="font-size:36px;margin-bottom:12px">🚗</div><div style="font-size:14px">${hkFilter==="pending"?"未引き取りの案件なし ✅":"表示する案件なし"}</div></div>`;
+    return;
+  }
+  document.getElementById("hk-list").innerHTML=jobs.map(j=>{
+    const done=j.status==="完了";
+    return`<div class="card${done?" ok":""}" style="border-left:4px solid ${done?"var(--green)":"var(--purple)"}">
+      <div style="display:flex;align-items:start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="card-title" style="${done?"opacity:.6;text-decoration:line-through":""}">${j.title}</div>
+          <div class="card-meta" style="margin-top:5px">
+            <span class="bdg2 ${stb(j.status)}">${j.status||"—"}</span>
+            ${j.client?`<span style="font-size:13px;color:var(--text2)">${j.client}</span>`:""}
+            ${j.workdate?`<span style="font-size:12px;color:var(--text3)">${j.workdate===TODAY?"<strong style='color:var(--green)'>今日</strong>":j.workdate===TOMORROW?"<strong style='color:var(--blue)'>明日</strong>":j.workdate}</span>`:""}
+          </div>
+          ${j.note?`<div class="note-box" style="margin-top:8px"><span class="note-ic">⚠️</span><span class="note-text">${j.note}</span></div>`:""}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0">
+          ${!done
+            ?`<button class="btn btn-green btn-sm" onclick="hkDone('${j.id}')">✅ 引き取り完了</button>`
+            :`<button class="btn btn-out btn-sm" style="font-size:12px;color:var(--text3)" onclick="hkUndone('${j.id}')">取消</button>`
+          }
+          <a href="${nurl(j.nid)}" target="_blank" class="btn btn-out btn-sm" style="text-decoration:none;font-size:12px">Notion</a>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function hkDone(id){
+  const j=HIKITORI_JOBS.find(x=>x.id===id);if(!j)return;
+  j.status="完了";
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    await fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:'完了',workdate:today})});
+  }catch{}
+  toast("✅ 引き取り完了にしました");
+  const pending=HIKITORI_JOBS.filter(x=>x.status!=="完了").length;
+  const bdg=document.getElementById("bdg-hk");
+  if(pending){bdg.style.display="flex";bdg.textContent=pending;}else{bdg.style.display="none";}
+  renderHikitori();renderCal();
+}
+async function hkUndone(id){
+  const j=HIKITORI_JOBS.find(x=>x.id===id);if(!j)return;
+  j.status="引き取り待ち";
+  try{fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:'引き取り待ち'})})}catch{}
+  toast("↩️ 引き取り待ちに戻しました");renderHikitori();
+}
+
+// ── アラート ──
+function renderAlert(){
+  const al_t=JOBS.filter(j=>isAl(j));
+  const al_n=JOBS.filter(j=>j.status==="未入荷"||j.status==="ガラス未入荷"||j.status==="網戸未入荷");
+  document.getElementById("alert-chips").innerHTML=[
+    {n:al_t.length,l:"手配書・住所なし",c:"b-red"},
+    {n:al_n.length,l:"未入荷",c:"b-yellow"},
+    {n:JOBS.filter(j=>j.workdate===TODAY&&j.status!=="完了").length,l:"本日残作業",c:"b-blue"},
+  ].map(x=>`<span class="bdg2 ${x.c}" style="font-size:13px;padding:7px 14px;margin-right:7px;margin-bottom:7px">${x.n}件 ${x.l}</span>`).join("");
+  const all=[...new Map([...al_t,...al_n].map(j=>[j.id,j])).values()];
+  document.getElementById("alert-list").innerHTML=all.length?all.map(j=>`<div class="card ${isAl(j)?"alert":"warn"}" onclick="go('board');openDetail('${j.id}')">
+    <div class="card-title">${j.title}</div>
+    <div class="card-meta">
+      <span class="bdg2 ${stb(j.status)}">${j.status||"—"}</span>
+      ${j.client?`<span style="font-size:13px;color:var(--text2)">${j.client}</span>`:""}
+      ${j.workdate?`<span style="font-size:12px;color:var(--text3)">${j.workdate}</span>`:""}
+    </div>
+    ${j.note?`<div class="note-box" style="margin-top:8px"><span class="note-ic">⚠️</span><span class="note-text">${j.note}</span></div>`:""}
+  </div>`).join(""):`<div style="text-align:center;padding:48px;color:var(--text3)"><div style="font-size:36px;margin-bottom:12px">✅</div><div style="font-size:14px">アラートなし</div></div>`;
+}
+
+// ── 週間スケジュール ──
+function renderWeek(){
+  // 今週の月〜日を計算
+  const now = new Date();
+  const dow = now.getDay(); // 0=日
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+
+  const days = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+  const dayNames = ["月","火","水","木","金","土","日"];
+
+  // ナビ（先週・来週）
+  document.getElementById("week-nav").innerHTML=`
+    <button class="dtab" onclick="weekOffset(-7)">← 先週</button>
+    <span style="padding:9px 14px;font-size:13px;font-weight:700;color:var(--text2)">${monday.getMonth()+1}/${monday.getDate()}〜</span>
+    <button class="dtab" onclick="weekOffset(7)">来週 →</button>
+  `;
+
+  let html="";
+  days.forEach((d,i)=>{
+    const ds = d.toISOString().slice(0,10);
+    const isToday = ds===TODAY;
+    const dayJobs = JOBS.filter(j=>j.workdate===ds);
+    const dayArrive = JOBS.filter(j=>j.arrivedate===ds && j.status!=="完了");
+
+    html += `<div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:${isToday?"var(--blue3)":"var(--bg2)"};border:1.5px solid ${isToday?"var(--blue)":"var(--border)"}">
+        <div style="min-width:36px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:${isToday?"var(--blue)":"var(--text)"}">${d.getDate()}</div>
+          <div style="font-size:10px;font-weight:700;color:${isToday?"var(--blue)":"var(--text3)"}">${dayNames[i]}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          ${dayJobs.length===0 && dayArrive.length===0
+            ? `<span style="font-size:13px;color:var(--text3)">予定なし</span>`
+            : `${dayJobs.map(j=>{
+                const ws=Array.isArray(j.workers)?j.workers:[];
+                return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer" onclick="go('board');openDetail('${j.id}')">
+                  <span class="bdg2 ${stb(j.status)}" style="font-size:11px;flex-shrink:0">${j.status||"—"}</span>
+                  <span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${j.title}</span>
+                  ${ws.length?`<span style="font-size:11px;color:var(--text3);flex-shrink:0">${ws.filter(w=>w!=="引き取り").slice(0,2).join("・")}</span>`:""}
+                </div>`;
+              }).join("")}
+              ${dayArrive.map(j=>`<div style="font-size:12px;color:var(--blue);margin-bottom:3px">📦 ${j.title.slice(0,18)}${j.title.length>18?"…":""}</div>`).join("")}`
+          }
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("week-body").innerHTML = html||`<div style="text-align:center;padding:40px;color:var(--text3)">この週の予定なし</div>`;
+}
+let weekDayOffset = 0;
+function weekOffset(d){
+  weekDayOffset += d;
+  const now = new Date();
+  now.setDate(now.getDate() + weekDayOffset);
+  const tmp = now;
+  const dow = tmp.getDay();
+  const monday = new Date(tmp);
+  monday.setDate(tmp.getDate() - (dow === 0 ? 6 : dow - 1));
+  // JOBSの日付比較用に今週の日付を再計算して表示
+  const days2=[];
+  for(let i=0;i<7;i++){const dd=new Date(monday);dd.setDate(monday.getDate()+i);days2.push(dd);}
+  const dayNames2=["月","火","水","木","金","土","日"];
+  document.getElementById("week-nav").innerHTML=`
+    <button class="dtab" onclick="weekOffset(-7)">← 先週</button>
+    <span style="padding:9px 14px;font-size:13px;font-weight:700;color:var(--text2)">${monday.getMonth()+1}/${monday.getDate()}〜</span>
+    <button class="dtab" onclick="weekOffset(7)">来週 →</button>
+  `;
+  let html2="";
+  days2.forEach((dd,i)=>{
+    const ds=dd.toISOString().slice(0,10);
+    const isToday=ds===TODAY;
+    const dayJobs=JOBS.filter(j=>j.workdate===ds);
+    const dayArrive=JOBS.filter(j=>j.arrivedate===ds&&j.status!=="完了");
+    html2+=`<div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:${isToday?"var(--blue3)":"var(--bg2)"};border:1.5px solid ${isToday?"var(--blue)":"var(--border)"}">
+        <div style="min-width:36px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:${isToday?"var(--blue)":"var(--text)"}">${dd.getDate()}</div>
+          <div style="font-size:10px;font-weight:700;color:${isToday?"var(--blue)":"var(--text3)"}">${dayNames2[i]}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          ${dayJobs.length===0&&dayArrive.length===0
+            ?`<span style="font-size:13px;color:var(--text3)">予定なし</span>`
+            :`${dayJobs.map(j=>{const ws=Array.isArray(j.workers)?j.workers:[];return`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer" onclick="go('board');openDetail('${j.id}')"><span class="bdg2 ${stb(j.status)}" style="font-size:11px;flex-shrink:0">${j.status||"—"}</span><span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${j.title}</span>${ws.length?`<span style="font-size:11px;color:var(--text3);flex-shrink:0">${ws.filter(w=>w!=="引き取り").slice(0,2).join("・")}</span>`:""}</div>`;}).join("")}${dayArrive.map(j=>`<div style="font-size:12px;color:var(--blue);margin-bottom:3px">📦 ${j.title.slice(0,18)}${j.title.length>18?"…":""}</div>`).join("")}`}
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("week-body").innerHTML=html2;
+}
+
+// ── 一括工程変更 ──
+function initBulk(){
+  bulkSelected.clear();
+  bulkTargetStatus="";
+  // 工程ボタン
+  const QUICK = ["入荷済み","完了","未入荷","工事中","確認中","組み立てまだ","組み立て済み","手配書まだ"];
+  document.getElementById("bulk-status-btns").innerHTML = QUICK.map(s=>{
+    const cls=["入荷済み","完了","組み立て済み"].includes(s)?"g":["未入荷","手配書まだ"].includes(s)?"r":["組み立てまだ"].includes(s)?"y":"";
+    return`<button class="sbtn ${cls}" onclick="setBulkStatus('${s}',this)">${s}</button>`;
+  }).join("");
+  renderBulkList();
+}
+function setBulkStatus(s, btn){
+  bulkTargetStatus=s;
+  document.querySelectorAll("#bulk-status-btns .sbtn").forEach(b=>b.classList.remove("cur"));
+  btn.classList.add("cur");
+}
+function setBulkFilter(f, btn){
+  bulkFilter=f;
+  bulkSelected.clear();
+  document.querySelectorAll("#page-bulk .dtab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderBulkList();
+}
+function renderBulkList(){
+  let jobs = JOBS;
+  if(bulkFilter==="today") jobs=JOBS.filter(j=>j.workdate===TODAY);
+  else if(bulkFilter==="tomorrow") jobs=JOBS.filter(j=>j.workdate===TOMORROW);
+  else if(bulkFilter==="unarrive") jobs=JOBS.filter(j=>["未入荷","ガラス未入荷","網戸未入荷"].includes(j.status));
+
+  document.getElementById("bulk-sel-count").textContent=`${bulkSelected.size}件選択中`;
+  document.getElementById("bulk-list").innerHTML=jobs.length?jobs.map(j=>{
+    const sel=bulkSelected.has(j.id);
+    const ws=Array.isArray(j.workers)?j.workers:[];
+    return`<div class="card${sel?" ok":""}" style="border-left:4px solid ${sel?"var(--green)":"var(--border2)"};cursor:pointer" onclick="toggleBulkSel('${j.id}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:26px;height:26px;border-radius:8px;border:2px solid ${sel?"var(--green)":"var(--border2)"};background:${sel?"var(--green)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:#0a2a1e">${sel?"✓":""}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.3">${j.title}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="bdg2 ${stb(j.status)}" style="font-size:11px">${j.status||"—"}</span>
+            ${j.client?`<span style="font-size:12px;color:var(--text2)">${j.client}</span>`:""}
+            ${ws.length?`<span style="font-size:12px;color:var(--text3)">${ws.join("・")}</span>`:""}
+            ${j.workdate?`<span style="font-size:11px;color:var(--text3)">${j.workdate===TODAY?"今日":j.workdate===TOMORROW?"明日":j.workdate}</span>`:""}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join("") : `<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px">該当案件なし</div>`;
+}
+function toggleBulkSel(id){
+  if(bulkSelected.has(id)) bulkSelected.delete(id);
+  else bulkSelected.add(id);
+  renderBulkList();
+}
+function bulkSelectAll(){
+  let jobs=JOBS;
+  if(bulkFilter==="today") jobs=JOBS.filter(j=>j.workdate===TODAY);
+  else if(bulkFilter==="tomorrow") jobs=JOBS.filter(j=>j.workdate===TOMORROW);
+  else if(bulkFilter==="unarrive") jobs=JOBS.filter(j=>["未入荷","ガラス未入荷","網戸未入荷"].includes(j.status));
+  jobs.forEach(j=>bulkSelected.add(j.id));
+  renderBulkList();
+}
+function bulkClearAll(){bulkSelected.clear();renderBulkList();}
+async function execBulk(){
+  if(!bulkTargetStatus){toast("変更後の工程を選んでください");return;}
+  if(!bulkSelected.size){toast("案件を選択してください");return;}
+  const btn=document.getElementById("bulk-exec-btn");
+  btn.innerHTML=`<span class="spin" style="width:16px;height:16px;border-width:2px"></span> 変更中... (0/${bulkSelected.size})`;
+  btn.disabled=true;
+  let done=0;
+  const ids=[...bulkSelected];
+  for(const id of ids){
+    const j=JOBS.find(x=>x.id===id);if(!j)continue;
+    const old=j.status;j.status=bulkTargetStatus;
+    try{
+      await fetch('/api/update-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j.id,status:bulkTargetStatus})});
+    }catch{}
+    done++;
+    btn.innerHTML=`<span class="spin" style="width:16px;height:16px;border-width:2px"></span> 変更中... (${done}/${ids.length})`;
+    await new Promise(r=>setTimeout(r,400));
+  }
+  toast(`✅ ${done}件を「${bulkTargetStatus}」に変更しました`);
+  bulkSelected.clear();
+  btn.innerHTML="✅ まとめて変更する";
+  btn.disabled=false;
+  renderBulkList();renderDash();
+}
+
+// ── 案件チャットメモ ──
+function initChat(){
+  const sel=document.getElementById("chat-job");
+  if(sel.children.length<=1) sel.innerHTML='<option value="">選択してください...</option>'+JOBS.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
+  if(curChatJob){sel.value=curChatJob;onChatJob();}
+}
+function onChatJob(){
+  curChatJob=document.getElementById("chat-job").value;
+  const j=JOBS.find(x=>x.id===curChatJob);
+  const info=document.getElementById("chat-job-info");
+  info.style.display=curChatJob?"":"none";
+  if(j){const ws=Array.isArray(j.workers)?j.workers:[];info.textContent=`${j.title} ／ ${j.client||"—"} ／ ${ws.join("・")||"担当者未定"}`;}
+  document.getElementById("chat-messages").style.display=curChatJob?"":"none";
+  if(!CHAT_MSGS[curChatJob]) CHAT_MSGS[curChatJob]=[];
+  renderChatList();
+}
+function renderChatList(){
+  if(!curChatJob) return;
+  const msgs=CHAT_MSGS[curChatJob]||[];
+  document.getElementById("chat-list").innerHTML=msgs.length
+    ? msgs.map(m=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${WCOLS[m.sender]||"#9ba3b4"}30;color:${WCOLS[m.sender]||"#9ba3b4"};border:2px solid ${WCOLS[m.sender]||"#9ba3b4"}60;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${m.sender?m.sender[0]:"?"}</div>
+          <span style="font-size:13px;font-weight:700">${m.sender||"不明"}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:auto">${m.date}</span>
+        </div>
+        <div style="font-size:14px;line-height:1.6;color:var(--text)">${m.text}</div>
+      </div>`).join("")
+    : `<div style="text-align:center;padding:28px 0;color:var(--text3);font-size:13px">メモがありません</div>`;
+}
+async function sendChatMsg(){
+  if(!curChatJob){toast("案件を選択してください");return;}
+  const j=JOBS.find(x=>x.id===curChatJob);
+  const sender=document.getElementById("chat-sender").value;
+  const text=document.getElementById("chat-input").value.trim();
+  if(!text){toast("メモを入力してください");return;}
+  const date=new Date().toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  // ローカルに追加
+  if(!CHAT_MSGS[curChatJob]) CHAT_MSGS[curChatJob]=[];
+  CHAT_MSGS[curChatJob].unshift({sender,text,date});
+  // Notionに追記
+  toast("送信中...");
+  try{
+    await fetch('/api/add-memo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pageId:j?.id,sender:sender||'不明',text:text})});
+  }catch{}
+  document.getElementById("chat-input").value="";
+  renderChatList();
+  toast("✅ メモを送信しました");
+}
+
+// ── 初期化 ──
+initSelects();
+// まず現在のデータで表示→Notionから取得して更新
+renderDash();
+loadFromNotion();
+
+// ── 新規案件登録 ──
+function initNewJob(){
+  // 得意先サジェストを既存案件から生成
+  const clients=[...new Set(JOBS.map(j=>j.client).filter(Boolean))];
+  document.getElementById("client-list").innerHTML=clients.map(c=>`<option value="${c}">`).join("");
+  // 今日の日付をデフォルトに
+  if(!document.getElementById("new-workdate").value){
+    document.getElementById("new-workdate").value=TODAY;
+  }
+  // 担当者ボタンをリセット
+  newWorkers.clear();
+  document.querySelectorAll("#new-workers-btns .tag").forEach(b=>b.classList.remove("sel","ガラス","ビート","クレセント","戸車","網戸","その他"));
+}
+function toggleWorkerBtn(btn, name){
+  if(newWorkers.has(name)){newWorkers.delete(name);btn.style.background="";btn.style.color="";btn.style.borderColor="";}
+  else{newWorkers.add(name);btn.style.background="var(--blue3)";btn.style.color="var(--blue)";btn.style.borderColor="var(--blue)";}
+}
+async function submitNewJob(){
+  const title=document.getElementById("new-title").value.trim();
+  if(!title){toast("タイトルを入力してください");return;}
+  const client=document.getElementById("new-client").value.trim();
+  const sales=document.getElementById("new-sales").value;
+  const workers=[...newWorkers];
+  const workdate=document.getElementById("new-workdate").value;
+  const arrivedate=document.getElementById("new-arrivedate").value;
+  const address=document.getElementById("new-address").value.trim();
+  const mapurl=document.getElementById("new-mapurl").value.trim();
+  const note=document.getElementById("new-note").value.trim();
+  const status=document.getElementById("new-status").value;
+  const btn=document.getElementById("new-submit-btn");
+  btn.innerHTML=`<span class="spin" style="width:16px;height:16px;border-width:2px"></span> 登録中...`;
+  btn.disabled=true;
+  try{
+    const res=await fetch('/api/create-job',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,client,sales,workers,workdate,arrivedate,address,mapUrl:mapurl,note,status})});
+    const json=await res.json();
+    if(json.ok){
+      ["new-title","new-client","new-address","new-mapurl","new-note"].forEach(id=>document.getElementById(id).value="");
+      document.getElementById("new-workdate").value=TODAY;
+      document.getElementById("new-arrivedate").value="";
+      document.getElementById("new-status").value="未着手";
+      newWorkers.clear();
+      document.querySelectorAll("#new-workers-btns .tag").forEach(b=>{b.style.background="";b.style.color="";b.style.borderColor="";});
+      JOBS.unshift({id:json.page_id||'jnew'+Date.now(),nid:json.nid||'',title,client,sales,status,workdate,arrivedate,workers,note,address,mapUrl:mapurl});
+      renderDash();initSelects();
+      toast("✅ Notionに登録しました！");
+    }else{toast("登録できませんでした: "+(json.error||""));}
+  }catch(e){console.error(e);toast("エラーが発生しました");}
+  btn.innerHTML="📋 Notionに登録する";
+  btn.disabled=false;
+}
+
+// ── 担当者グラフ ──
+function setGraphTab(tab, btn){
+  graphTab=tab;
+  document.querySelectorAll("#page-graph .dtab").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");
+  renderGraph();
+}
+function renderGraph(){
+  // 対象期間のJOBSを絞る
+  const now=new Date();
+  let jobs=JOBS;
+  if(graphTab==="month"){
+    const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    jobs=JOBS.filter(j=>j.workdate?.startsWith(ym));
+  }else if(graphTab==="week"){
+    const weekAgo=new Date(now-7*86400000).toISOString().slice(0,10);
+    jobs=JOBS.filter(j=>j.workdate>=weekAgo&&j.workdate<=TODAY);
+  }
+  // 担当者ごとの集計
+  const counts={};
+  jobs.forEach(j=>{
+    const ws=Array.isArray(j.workers)?j.workers:[];
+    ws.filter(w=>w!=="引き取り").forEach(w=>{counts[w]=(counts[w]||0)+1;});
+  });
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const maxV=sorted.length?sorted[0][1]:1;
+  const tabLabel=graphTab==="month"?"今月":graphTab==="week"?"今週":"全期間";
+  document.getElementById("graph-wrap").innerHTML=sorted.length?`
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:10px;font-weight:600">${tabLabel}の担当者別件数（${jobs.length}件）</div>
+      ${sorted.map(([w,n])=>{
+        const col=WCOLS[w]||"#9ba3b4";
+        const pct=Math.round(n/maxV*100);
+        return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:${col}30;color:${col};border:2px solid ${col}60;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${w[0]}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:14px;font-weight:700">${w}</span>
+              <span style="font-size:14px;font-weight:700;color:${col}">${n}件</span>
+            </div>
+            <div style="height:10px;border-radius:5px;background:var(--bg3);overflow:hidden">
+              <div style="height:100%;border-radius:5px;background:${col};width:${pct}%;transition:width .5s"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`:`<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:36px;margin-bottom:12px">📊</div><div style="font-size:14px">${tabLabel}の担当案件なし</div></div>`;
+
+  // 工程状況の内訳
+  const statusCounts={};
+  JOBS.forEach(j=>{if(j.status)statusCounts[j.status]=(statusCounts[j.status]||0)+1;});
+  const statusSorted=Object.entries(statusCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const total=JOBS.length||1;
+  document.getElementById("status-breakdown").innerHTML=statusSorted.map(([s,n])=>{
+    const pct=Math.round(n/total*100);
+    const cls=stb(s).replace("b-","");
+    const colors={"green":"var(--green)","red":"var(--red)","yellow":"var(--yellow)","blue":"var(--blue)","purple":"var(--purple)","gray":"var(--text3)"};
+    const col=colors[cls]||"var(--text3)";
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+      <span class="bdg2 ${stb(s)}" style="min-width:90px;justify-content:center;font-size:12px">${s}</span>
+      <div style="flex:1;height:8px;border-radius:4px;background:var(--bg3);overflow:hidden">
+        <div style="height:100%;border-radius:4px;background:${col};width:${pct}%"></div>
+      </div>
+      <span style="font-size:13px;font-weight:700;min-width:28px;text-align:right;color:${col}">${n}</span>
+    </div>`;
+  }).join("");
+}
+
+</script>
+</body>
+</html>
